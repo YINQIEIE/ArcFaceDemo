@@ -10,13 +10,19 @@ import android.graphics.YuvImage;
 import android.hardware.Camera;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.arcsoft.ageestimation.ASAE_FSDKAge;
+import com.arcsoft.ageestimation.ASAE_FSDKEngine;
+import com.arcsoft.ageestimation.ASAE_FSDKError;
 import com.arcsoft.ageestimation.ASAE_FSDKFace;
+import com.arcsoft.ageestimation.ASAE_FSDKVersion;
 import com.arcsoft.facerecognition.AFR_FSDKEngine;
 import com.arcsoft.facerecognition.AFR_FSDKError;
 import com.arcsoft.facerecognition.AFR_FSDKFace;
@@ -26,7 +32,11 @@ import com.arcsoft.facetracking.AFT_FSDKEngine;
 import com.arcsoft.facetracking.AFT_FSDKError;
 import com.arcsoft.facetracking.AFT_FSDKFace;
 import com.arcsoft.facetracking.AFT_FSDKVersion;
+import com.arcsoft.genderestimation.ASGE_FSDKEngine;
+import com.arcsoft.genderestimation.ASGE_FSDKError;
 import com.arcsoft.genderestimation.ASGE_FSDKFace;
+import com.arcsoft.genderestimation.ASGE_FSDKGender;
+import com.arcsoft.genderestimation.ASGE_FSDKVersion;
 import com.guo.android_extend.java.AbsLoop;
 import com.guo.android_extend.java.ExtByteArrayOutputStream;
 import com.guo.android_extend.tools.CameraHelper;
@@ -51,15 +61,21 @@ public class DetecterActivity extends Activity implements OnCameraListener, View
     private CameraGLSurfaceView mGLSurfaceView;
     private Camera mCamera;
 
+    private RecyclerView rv_result;
+    private List<ResultBean> resultList = new ArrayList<>();
+    private List<String> nameList = new ArrayList<>();
+    private ResultAdapter adapter;
+
     AFT_FSDKVersion version = new AFT_FSDKVersion();
     AFT_FSDKEngine engine = new AFT_FSDKEngine();
-    //	ASAE_FSDKVersion mAgeVersion = new ASAE_FSDKVersion();
-//	ASAE_FSDKEngine mAgeEngine = new ASAE_FSDKEngine();
-//	ASGE_FSDKVersion mGenderVersion = new ASGE_FSDKVersion();
-//	ASGE_FSDKEngine mGenderEngine = new ASGE_FSDKEngine();
+    ASAE_FSDKVersion mAgeVersion = new ASAE_FSDKVersion();
+    ASAE_FSDKEngine mAgeEngine = new ASAE_FSDKEngine();
+    ASGE_FSDKVersion mGenderVersion = new ASGE_FSDKVersion();
+    ASGE_FSDKEngine mGenderEngine = new ASGE_FSDKEngine();
     List<AFT_FSDKFace> result = new ArrayList<>();
-//	List<ASAE_FSDKAge> ages = new ArrayList<>();
-//	List<ASGE_FSDKGender> genders = new ArrayList<>();
+    List<AFT_FSDKFace> resultRecoder = new ArrayList<>();
+    List<ASAE_FSDKAge> ages = new ArrayList<>();
+    List<ASGE_FSDKGender> genders = new ArrayList<>();
 
     int mCameraID;
     int mCameraRotate;
@@ -68,6 +84,7 @@ public class DetecterActivity extends Activity implements OnCameraListener, View
     FRAbsLoop mFRAbsLoop = null;
     AFT_FSDKFace mAFT_FSDKFace = null;
     Handler mHandler;
+    boolean loop = true;
 
     Runnable hide = new Runnable() {
         @Override
@@ -81,7 +98,7 @@ public class DetecterActivity extends Activity implements OnCameraListener, View
 
         AFR_FSDKVersion version = new AFR_FSDKVersion();
         AFR_FSDKEngine engine = new AFR_FSDKEngine();
-        AFR_FSDKFace result = new AFR_FSDKFace();
+        AFR_FSDKFace regResult = new AFR_FSDKFace();
         List<FaceDB.FaceRegist> mResgist = ((Application) DetecterActivity.this.getApplicationContext()).mFaceDB.mRegister;
         List<ASAE_FSDKFace> face1 = new ArrayList<>();
         List<ASGE_FSDKFace> face2 = new ArrayList<>();
@@ -96,96 +113,116 @@ public class DetecterActivity extends Activity implements OnCameraListener, View
 
         @Override
         public void loop() {
-            if (mImageNV21 != null) {
-                long time = System.currentTimeMillis();
-                AFR_FSDKError error = engine.AFR_FSDK_ExtractFRFeature(mImageNV21, mWidth, mHeight, AFR_FSDKEngine.CP_PAF_NV21, mAFT_FSDKFace.getRect(), mAFT_FSDKFace.getDegree(), result);
-                Log.d(TAG, "AFR_FSDK_ExtractFRFeature cost :" + (System.currentTimeMillis() - time) + "ms");
-                Log.d(TAG, "Face=" + result.getFeatureData()[0] + "," + result.getFeatureData()[1] + "," + result.getFeatureData()[2] + "," + error.getCode());
-                AFR_FSDKMatching score = new AFR_FSDKMatching();
-                float max = 0.0f;
-                String name = null;
-                for (FaceDB.FaceRegist fr : mResgist) {
-                    for (AFR_FSDKFace face : fr.mFaceList) {
-                        error = engine.AFR_FSDK_FacePairMatching(result, face, score);
-                        Log.d(TAG, "Score:" + score.getScore() + ", AFR_FSDK_FacePairMatching=" + error.getCode());
-                        if (max < score.getScore()) {
-                            max = score.getScore();
-                            name = fr.mName;
+            if (!loop) return;
+//            resultList.clear();
+            for (int i = 0; i < resultRecoder.size(); i++) {
+                loop = false;
+                mAFT_FSDKFace = resultRecoder.get(i).clone();
+                if (mImageNV21 != null) {
+                    Log.i(TAG, "loop: mImageNV21 != null");
+                    long time = System.currentTimeMillis();
+                    AFR_FSDKError error = engine.AFR_FSDK_ExtractFRFeature(mImageNV21, mWidth, mHeight, AFR_FSDKEngine.CP_PAF_NV21, mAFT_FSDKFace.getRect(), mAFT_FSDKFace.getDegree(), regResult);
+                    Log.d(TAG, "AFR_FSDK_ExtractFRFeature cost :" + (System.currentTimeMillis() - time) + "ms");
+                    Log.d(TAG, "Face=" + regResult.getFeatureData()[0] + "," + regResult.getFeatureData()[1] + "," + regResult.getFeatureData()[2] + "," + error.getCode());
+                    AFR_FSDKMatching score = new AFR_FSDKMatching();
+                    float max = 0.0f;
+                    String name = null;
+                    for (FaceDB.FaceRegist fr : mResgist) {
+                        for (AFR_FSDKFace face : fr.mFaceList) {
+                            error = engine.AFR_FSDK_FacePairMatching(regResult, face, score);
+                            Log.d(TAG, "Score:" + score.getScore() + ", AFR_FSDK_FacePairMatching=" + error.getCode());
+                            if (max < score.getScore()) {
+                                max = score.getScore();
+                                name = fr.mName;
+                            }
                         }
                     }
-                }
 
-                //age & gender
-                face1.clear();
-                face2.clear();
-                face1.add(new ASAE_FSDKFace(mAFT_FSDKFace.getRect(), mAFT_FSDKFace.getDegree()));
-                face2.add(new ASGE_FSDKFace(mAFT_FSDKFace.getRect(), mAFT_FSDKFace.getDegree()));
-//				ASAE_FSDKError error1 = mAgeEngine.ASAE_FSDK_AgeEstimation_Image(mImageNV21, mWidth, mHeight, AFT_FSDKEngine.CP_PAF_NV21, face1, ages);
-//				ASGE_FSDKError error2 = mGenderEngine.ASGE_FSDK_GenderEstimation_Image(mImageNV21, mWidth, mHeight, AFT_FSDKEngine.CP_PAF_NV21, face2, genders);
-//				Log.d(TAG, "ASAE_FSDK_AgeEstimation_Image:" + error1.getCode() + ",ASGE_FSDK_GenderEstimation_Image:" + error2.getCode());
-//				Log.d(TAG, "age:" + ages.get(0).getAge() + ",gender:" + genders.get(0).getGender());
-//				final String age = ages.get(0).getAge() == 0 ? "年龄未知" : ages.get(0).getAge() + "岁";
-//				final String gender = genders.get(0).getGender() == -1 ? "性别未知" : (genders.get(0).getGender() == 0 ? "男" : "女");
+                    //age & gender
+                    face1.clear();
+                    face2.clear();
+                    face1.add(new ASAE_FSDKFace(mAFT_FSDKFace.getRect(), mAFT_FSDKFace.getDegree()));
+                    face2.add(new ASGE_FSDKFace(mAFT_FSDKFace.getRect(), mAFT_FSDKFace.getDegree()));
+                    ASAE_FSDKError error1 = mAgeEngine.ASAE_FSDK_AgeEstimation_Image(mImageNV21, mWidth, mHeight, AFT_FSDKEngine.CP_PAF_NV21, face1, ages);
+                    ASGE_FSDKError error2 = mGenderEngine.ASGE_FSDK_GenderEstimation_Image(mImageNV21, mWidth, mHeight, AFT_FSDKEngine.CP_PAF_NV21, face2, genders);
+                    Log.d(TAG, "ASAE_FSDK_AgeEstimation_Image:" + error1.getCode() + ",ASGE_FSDK_GenderEstimation_Image:" + error2.getCode());
+                    Log.d(TAG, "age:" + ages.get(0).getAge() + ",gender:" + genders.get(0).getGender());
+                    final String age = ages.get(0).getAge() == 0 ? "年龄未知" : ages.get(0).getAge() + "岁";
+                    final String gender = genders.get(0).getGender() == -1 ? "性别未知" : (genders.get(0).getGender() == 0 ? "男" : "女");
 
-                //crop
-                byte[] data = mImageNV21;
-                YuvImage yuv = new YuvImage(data, ImageFormat.NV21, mWidth, mHeight, null);
-                ExtByteArrayOutputStream ops = new ExtByteArrayOutputStream();
-                yuv.compressToJpeg(mAFT_FSDKFace.getRect(), 80, ops);
-                final Bitmap bmp = BitmapFactory.decodeByteArray(ops.getByteArray(), 0, ops.getByteArray().length);
-                try {
-                    ops.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                    //crop
+                    byte[] data = mImageNV21;
+                    YuvImage yuv = new YuvImage(data, ImageFormat.NV21, mWidth, mHeight, null);
+                    ExtByteArrayOutputStream ops = new ExtByteArrayOutputStream();
+                    yuv.compressToJpeg(mAFT_FSDKFace.getRect(), 80, ops);
+                    final Bitmap bmp = BitmapFactory.decodeByteArray(ops.getByteArray(), 0, ops.getByteArray().length);
+                    try {
+                        ops.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
 
-                if (max > 0.6f) {
-                    //fr success.
-                    final float max_score = max;
-                    Log.d(TAG, "fit Score:" + max + ", NAME:" + name);
-                    final String mNameShow = name;
-                    mHandler.removeCallbacks(hide);
-                    mHandler.post(new Runnable() {
+                    if (max > 0.6f) {
+                        //fr success.
+                        final float max_score = max;
+                        Log.d(TAG, "fit Score:" + max + ", NAME:" + name);
+                        final String mNameShow = name;
+                        mHandler.removeCallbacks(hide);
+                        mHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+
+                                mTextView.setAlpha(1.0f);
+                                mTextView.setText(mNameShow);
+                                mTextView.setTextColor(Color.RED);
+//                                mTextView1.setVisibility(View.VISIBLE);
+                                mTextView1.setText("置信度：" + (float) ((int) (max_score * 1000)) / 1000.0);
+                                mTextView1.setTextColor(Color.RED);
+                                mImageView.setRotation(mCameraRotate);
+                                if (mCameraMirror) {
+                                    mImageView.setScaleY(-1);
+                                }
+                                mImageView.setImageAlpha(255);
+                                mImageView.setImageBitmap(bmp);
+                                if (!nameList.contains(mNameShow)) {
+                                    nameList.add(mNameShow);
+                                    resultList.add(new ResultBean(mNameShow, "置信度：" + (float) ((int) (max_score * 1000)) / 1000.0, bmp));
+                                }
+                            }
+                        });
+                    } else {
+                        final String mNameShow = "未识别";
+                        DetecterActivity.this.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                mTextView.setAlpha(1.0f);
+//                                mTextView1.setVisibility(View.VISIBLE);
+                                mTextView1.setText(gender + "," + age);
+                                mTextView1.setTextColor(Color.RED);
+                                mTextView.setText(mNameShow);
+                                mTextView.setTextColor(Color.RED);
+                                mImageView.setImageAlpha(255);
+                                mImageView.setRotation(mCameraRotate);
+                                if (mCameraMirror) {
+                                    mImageView.setScaleY(-1);
+                                }
+                                mImageView.setImageBitmap(bmp);
+                            }
+                        });
+                    }
+                    if (i == resultRecoder.size() - 1)
+                        mImageNV21 = null;
+                    runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-
-                            mTextView.setAlpha(1.0f);
-                            mTextView.setText(mNameShow);
-                            mTextView.setTextColor(Color.RED);
-                            mTextView1.setVisibility(View.VISIBLE);
-                            mTextView1.setText("置信度：" + (float) ((int) (max_score * 1000)) / 1000.0);
-                            mTextView1.setTextColor(Color.RED);
-                            mImageView.setRotation(mCameraRotate);
-                            if (mCameraMirror) {
-                                mImageView.setScaleY(-1);
-                            }
-                            mImageView.setImageAlpha(255);
-                            mImageView.setImageBitmap(bmp);
-                        }
-                    });
-                } else {
-                    final String mNameShow = "未识别";
-                    DetecterActivity.this.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            mTextView.setAlpha(1.0f);
-                            mTextView1.setVisibility(View.VISIBLE);
-//							mTextView1.setText( gender + "," + age);
-                            mTextView1.setTextColor(Color.RED);
-                            mTextView.setText(mNameShow);
-                            mTextView.setTextColor(Color.RED);
-                            mImageView.setImageAlpha(255);
-                            mImageView.setRotation(mCameraRotate);
-                            if (mCameraMirror) {
-                                mImageView.setScaleY(-1);
-                            }
-                            mImageView.setImageBitmap(bmp);
+                            adapter.notifyDataSetChanged();
                         }
                     });
                 }
-                mImageNV21 = null;
+                Log.i(TAG, "fit Score: one loop end");
             }
-
+            loop = true;
+            resultRecoder.clear();
         }
 
         @Override
@@ -223,28 +260,37 @@ public class DetecterActivity extends Activity implements OnCameraListener, View
         mSurfaceView.setupGLSurafceView(mGLSurfaceView, true, mCameraMirror, mCameraRotate);
         mSurfaceView.debug_print_fps(true, false);
 
+        rv_result = (RecyclerView) findViewById(R.id.rv_result);
+        adapter = new ResultAdapter(this, resultList, mCameraRotate, mCameraMirror);
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
+        rv_result.setLayoutManager(layoutManager);
+        rv_result.setAdapter(adapter);
+
         //snap
         mTextView = (TextView) findViewById(R.id.textView);
         mTextView.setText("");
         mTextView1 = (TextView) findViewById(R.id.textView1);
         mTextView1.setText("");
-
         mImageView = (ImageView) findViewById(R.id.imageView);
+
+        mTextView.setVisibility(View.INVISIBLE);
+        mTextView1.setVisibility(View.INVISIBLE);
+        mImageView.setVisibility(View.INVISIBLE);
 
         AFT_FSDKError err = engine.AFT_FSDK_InitialFaceEngine(FaceDB.appid, FaceDB.ft_key, AFT_FSDKEngine.AFT_OPF_0_HIGHER_EXT, 16, 5);
         Log.d(TAG, "AFT_FSDK_InitialFaceEngine =" + err.getCode());
         err = engine.AFT_FSDK_GetVersion(version);
         Log.d(TAG, "AFT_FSDK_GetVersion:" + version.toString() + "," + err.getCode());
 
-//		ASAE_FSDKError error = mAgeEngine.ASAE_FSDK_InitAgeEngine(FaceDB.appid, FaceDB.age_key);
-//		Log.d(TAG, "ASAE_FSDK_InitAgeEngine =" + error.getCode());
-//		error = mAgeEngine.ASAE_FSDK_GetVersion(mAgeVersion);
-//		Log.d(TAG, "ASAE_FSDK_GetVersion:" + mAgeVersion.toString() + "," + error.getCode());
+        ASAE_FSDKError error = mAgeEngine.ASAE_FSDK_InitAgeEngine(FaceDB.appid, FaceDB.age_key);
+        Log.d(TAG, "ASAE_FSDK_InitAgeEngine =" + error.getCode());
+        error = mAgeEngine.ASAE_FSDK_GetVersion(mAgeVersion);
+        Log.d(TAG, "ASAE_FSDK_GetVersion:" + mAgeVersion.toString() + "," + error.getCode());
 
-//		ASGE_FSDKError error1 = mGenderEngine.ASGE_FSDK_InitgGenderEngine(FaceDB.appid, FaceDB.gender_key);
-//		Log.d(TAG, "ASGE_FSDK_InitgGenderEngine =" + error1.getCode());
-//		error1 = mGenderEngine.ASGE_FSDK_GetVersion(mGenderVersion);
-//		Log.d(TAG, "ASGE_FSDK_GetVersion:" + mGenderVersion.toString() + "," + error1.getCode());
+        ASGE_FSDKError error1 = mGenderEngine.ASGE_FSDK_InitgGenderEngine(FaceDB.appid, FaceDB.gender_key);
+        Log.d(TAG, "ASGE_FSDK_InitgGenderEngine =" + error1.getCode());
+        error1 = mGenderEngine.ASGE_FSDK_GetVersion(mGenderVersion);
+        Log.d(TAG, "ASGE_FSDK_GetVersion:" + mGenderVersion.toString() + "," + error1.getCode());
 
         mFRAbsLoop = new FRAbsLoop();
         mFRAbsLoop.start();
@@ -261,11 +307,11 @@ public class DetecterActivity extends Activity implements OnCameraListener, View
         AFT_FSDKError err = engine.AFT_FSDK_UninitialFaceEngine();
         Log.d(TAG, "AFT_FSDK_UninitialFaceEngine =" + err.getCode());
 
-//		ASAE_FSDKError err1 = mAgeEngine.ASAE_FSDK_UninitAgeEngine();
-//		Log.d(TAG, "ASAE_FSDK_UninitAgeEngine =" + err1.getCode());
-//
-//		ASGE_FSDKError err2 = mGenderEngine.ASGE_FSDK_UninitGenderEngine();
-//		Log.d(TAG, "ASGE_FSDK_UninitGenderEngine =" + err2.getCode());
+        ASAE_FSDKError err1 = mAgeEngine.ASAE_FSDK_UninitAgeEngine();
+        Log.d(TAG, "ASAE_FSDK_UninitAgeEngine =" + err1.getCode());
+
+        ASGE_FSDKError err2 = mGenderEngine.ASGE_FSDK_UninitGenderEngine();
+        Log.d(TAG, "ASGE_FSDK_UninitGenderEngine =" + err2.getCode());
     }
 
     @Override
@@ -329,9 +375,15 @@ public class DetecterActivity extends Activity implements OnCameraListener, View
             Log.d(TAG, "Face:" + face.toString());
         }
         if (mImageNV21 == null) {
+            Log.i("Face", "onPreview: mImageNV21 == null");
             if (!result.isEmpty()) {
+                Log.i("Face", "onPreview: !result.isEmpty()");
                 mAFT_FSDKFace = result.get(0).clone();
                 mImageNV21 = data.clone();
+                Log.i("Face", "onPreview: mImageNV21 == null:" + (mImageNV21 == null));
+//                for (int i = 0; i < result.size(); i++) {
+//                    resultRecoder.add(new AFT_FSDKFace(result.get(i)));
+//                }
             } else {
                 mHandler.postDelayed(hide, 3000);
             }
@@ -340,6 +392,12 @@ public class DetecterActivity extends Activity implements OnCameraListener, View
         Rect[] rects = new Rect[result.size()];
         for (int i = 0; i < result.size(); i++) {
             rects[i] = new Rect(result.get(i).getRect());
+        }
+        if (loop) {
+            mImageNV21 = data.clone();
+            for (int i = 0; i < result.size(); i++) {
+                resultRecoder.add(new AFT_FSDKFace(result.get(i)));
+            }
         }
         //clear result.
         result.clear();
