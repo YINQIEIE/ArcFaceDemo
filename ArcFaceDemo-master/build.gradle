@@ -12,9 +12,9 @@ android {
         sourceSets.main {
             jniLibs.srcDirs = ['libs']
         }
-        ndk {
-            abiFilters 'armeabi-v7a'
-        }
+//        ndk {
+//            abiFilters 'armeabi'
+//        }
     }
     buildTypes {
         release {
