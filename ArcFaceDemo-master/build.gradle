@@ -6,15 +6,15 @@ android {
     defaultConfig {
         applicationId "com.arcsoft.sdk_demo"
         minSdkVersion 19
-        targetSdkVersion 24
+        targetSdkVersion 27
         versionCode 1
         versionName "1.1"
         sourceSets.main {
             jniLibs.srcDirs = ['libs']
         }
-//        ndk {
-//            abiFilters 'armeabi'
-//        }
+        ndk {
+            abiFilters 'armeabi-v7a'
+        }
     }
     buildTypes {
         release {

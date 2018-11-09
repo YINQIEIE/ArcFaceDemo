@@ -117,7 +117,9 @@ public class DetecterActivity extends Activity implements OnCameraListener, View
 //            resultList.clear();
             for (int i = 0; i < resultRecoder.size(); i++) {
                 loop = false;
-                mAFT_FSDKFace = resultRecoder.get(i).clone();
+                AFT_FSDKFace aft_fsdkFace = resultRecoder.get(i);
+                if (null == aft_fsdkFace) continue;
+                mAFT_FSDKFace = aft_fsdkFace.clone();
                 if (mImageNV21 != null) {
                     Log.i(TAG, "loop: mImageNV21 != null");
                     long time = System.currentTimeMillis();
