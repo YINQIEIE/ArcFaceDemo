@@ -2,32 +2,20 @@ package com.arcsoft.sdk_demo;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Color;
 import android.graphics.ImageFormat;
 import android.graphics.YuvImage;
 import android.util.Log;
 
-import com.arcsoft.ageestimation.ASAE_FSDKAge;
-import com.arcsoft.ageestimation.ASAE_FSDKEngine;
-import com.arcsoft.ageestimation.ASAE_FSDKError;
-import com.arcsoft.ageestimation.ASAE_FSDKFace;
 import com.arcsoft.facerecognition.AFR_FSDKEngine;
 import com.arcsoft.facerecognition.AFR_FSDKError;
 import com.arcsoft.facerecognition.AFR_FSDKFace;
 import com.arcsoft.facerecognition.AFR_FSDKMatching;
 import com.arcsoft.facerecognition.AFR_FSDKVersion;
-import com.arcsoft.facetracking.AFT_FSDKEngine;
 import com.arcsoft.facetracking.AFT_FSDKFace;
-import com.arcsoft.genderestimation.ASGE_FSDKEngine;
-import com.arcsoft.genderestimation.ASGE_FSDKError;
-import com.arcsoft.genderestimation.ASGE_FSDKFace;
-import com.arcsoft.genderestimation.ASGE_FSDKGender;
-import com.arcsoft.genderestimation.ASGE_FSDKVersion;
 import com.guo.android_extend.java.AbsLoop;
 import com.guo.android_extend.java.ExtByteArrayOutputStream;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class FRTask extends AbsLoop {
@@ -45,14 +33,14 @@ public class FRTask extends AbsLoop {
     private AFT_FSDKFace mAFT_FSDKFace = null;
 
     private byte[] mImageNV21 = null;
-    private List<AFT_FSDKFace> resultRecoder;
+    private List<AFT_FSDKFace> resultRecorder;
     private boolean loop = true;
     private FaceMatchListener faceMatchListener;
 
-    public FRTask(int mWidth, int mHeight, List<AFT_FSDKFace> resultRecoder) {
+    public FRTask(int mWidth, int mHeight, List<AFT_FSDKFace> resultRecorder) {
         this.mWidth = mWidth;
         this.mHeight = mHeight;
-        this.resultRecoder = resultRecoder;
+        this.resultRecorder = resultRecorder;
     }
 
     @Override
@@ -67,9 +55,9 @@ public class FRTask extends AbsLoop {
     public void loop() {
         if (!loop) return;
         Log.d(TAG, "loop: looping");
-        for (int i = 0; i < resultRecoder.size(); i++) {
+        for (int i = 0; i < resultRecorder.size(); i++) {
             loop = false;
-            AFT_FSDKFace aft_fsdkFace = resultRecoder.get(i);
+            AFT_FSDKFace aft_fsdkFace = resultRecorder.get(i);
             if (null == aft_fsdkFace) continue;
             mAFT_FSDKFace = aft_fsdkFace.clone();
             if (mImageNV21 != null) {
@@ -91,7 +79,6 @@ public class FRTask extends AbsLoop {
                         }
                     }
                 }
-
                 //crop
                 byte[] data = mImageNV21;
                 YuvImage yuv = new YuvImage(data, ImageFormat.NV21, mWidth, mHeight, null);
@@ -105,14 +92,14 @@ public class FRTask extends AbsLoop {
                 }
                 if (null != faceMatchListener)
                     faceMatchListener.onMatch(max, name, bmp);
-                if (i == resultRecoder.size() - 1) {
+                if (i == resultRecorder.size() - 1) {
                     mImageNV21 = null;
                     if (null != faceMatchListener)
                         faceMatchListener.onMatchDone();
                 }
             }
         }
-        resultRecoder.clear();
+        resultRecorder.clear();
     }
 
     @Override
@@ -127,10 +114,6 @@ public class FRTask extends AbsLoop {
 
     public void setmImageNV21(byte[] mImageNV21) {
         this.mImageNV21 = mImageNV21;
-    }
-
-    public boolean isLoop() {
-        return loop;
     }
 
     public interface FaceMatchListener {
