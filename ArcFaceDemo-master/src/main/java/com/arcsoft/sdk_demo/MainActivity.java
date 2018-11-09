@@ -57,7 +57,7 @@ public class MainActivity extends Activity implements OnClickListener {
 		if (requestCode == REQUEST_CODE_IMAGE_OP && resultCode == RESULT_OK) {
 			Uri mPath = data.getData();
 			String file = getPath(mPath);
-			Bitmap bmp = Application.decodeImage(file);
+			Bitmap bmp = MyApplication.decodeImage(file);
 			if (bmp == null || bmp.getWidth() <= 0 || bmp.getHeight() <= 0 ) {
 				Log.e(TAG, "error");
 			} else {
@@ -73,9 +73,9 @@ public class MainActivity extends Activity implements OnClickListener {
 			String path = bundle.getString("imagePath");
 			Log.i(TAG, "path="+path);
 		} else if (requestCode == REQUEST_CODE_IMAGE_CAMERA && resultCode == RESULT_OK) {
-			Uri mPath = ((Application)(MainActivity.this.getApplicationContext())).getCaptureImage();
+			Uri mPath = ((MyApplication)(MainActivity.this.getApplicationContext())).getCaptureImage();
 			String file = getPath(mPath);
-			Bitmap bmp = Application.decodeImage(file);
+			Bitmap bmp = MyApplication.decodeImage(file);
 			startRegister(bmp, file);
 		}
 	}
@@ -85,7 +85,7 @@ public class MainActivity extends Activity implements OnClickListener {
 		// TODO Auto-generated method stub
 		switch (paramView.getId()) {
 			case R.id.button2:
-				if( ((Application)getApplicationContext()).mFaceDB.mRegister.isEmpty() ) {
+				if( ((MyApplication)getApplicationContext()).mFaceDB.mRegister.isEmpty() ) {
 					Toast.makeText(this, "没有注册人脸，请先注册！", Toast.LENGTH_SHORT).show();
 				} else {
 					new AlertDialog.Builder(this)
@@ -113,7 +113,7 @@ public class MainActivity extends Activity implements OnClickListener {
 										ContentValues values = new ContentValues(1);
 										values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
 										Uri uri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
-										((Application)(MainActivity.this.getApplicationContext())).setCaptureImage(uri);
+										((MyApplication)(MainActivity.this.getApplicationContext())).setCaptureImage(uri);
 										intent.putExtra(MediaStore.EXTRA_OUTPUT, uri);
 										startActivityForResult(intent, REQUEST_CODE_IMAGE_CAMERA);
 										break;
