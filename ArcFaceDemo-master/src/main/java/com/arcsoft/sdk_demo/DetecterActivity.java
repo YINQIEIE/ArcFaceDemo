@@ -97,7 +97,7 @@ public class DetecterActivity extends Activity implements OnCameraListener, View
     class FRAbsLoop extends AbsLoop {
 
         AFR_FSDKVersion version = new AFR_FSDKVersion();
-        AFR_FSDKEngine engine = new AFR_FSDKEngine();
+        AFR_FSDKEngine FREngine = new AFR_FSDKEngine();
         AFR_FSDKFace regResult = new AFR_FSDKFace();
         List<FaceDB.FaceRegist> mResgist = ((Application) DetecterActivity.this.getApplicationContext()).mFaceDB.mRegister;
         List<ASAE_FSDKFace> face1 = new ArrayList<>();
@@ -105,9 +105,9 @@ public class DetecterActivity extends Activity implements OnCameraListener, View
 
         @Override
         public void setup() {
-            AFR_FSDKError error = engine.AFR_FSDK_InitialEngine(FaceDB.appid, FaceDB.fr_key);
+            AFR_FSDKError error = FREngine.AFR_FSDK_InitialEngine(FaceDB.appid, FaceDB.fr_key);
             Log.d(TAG, "AFR_FSDK_InitialEngine = " + error.getCode());
-            error = engine.AFR_FSDK_GetVersion(version);
+            error = FREngine.AFR_FSDK_GetVersion(version);
             Log.d(TAG, "FR=" + version.toString() + "," + error.getCode()); //(210, 178 - 478, 446), degree = 1　780, 2208 - 1942, 3370
         }
 
@@ -123,7 +123,7 @@ public class DetecterActivity extends Activity implements OnCameraListener, View
                 if (mImageNV21 != null) {
                     Log.i(TAG, "loop: mImageNV21 != null");
                     long time = System.currentTimeMillis();
-                    AFR_FSDKError error = engine.AFR_FSDK_ExtractFRFeature(mImageNV21, mWidth, mHeight, AFR_FSDKEngine.CP_PAF_NV21, mAFT_FSDKFace.getRect(), mAFT_FSDKFace.getDegree(), regResult);
+                    AFR_FSDKError error = FREngine.AFR_FSDK_ExtractFRFeature(mImageNV21, mWidth, mHeight, AFR_FSDKEngine.CP_PAF_NV21, mAFT_FSDKFace.getRect(), mAFT_FSDKFace.getDegree(), regResult);
                     Log.d(TAG, "AFR_FSDK_ExtractFRFeature cost :" + (System.currentTimeMillis() - time) + "ms");
                     Log.d(TAG, "Face=" + regResult.getFeatureData()[0] + "," + regResult.getFeatureData()[1] + "," + regResult.getFeatureData()[2] + "," + error.getCode());
                     AFR_FSDKMatching score = new AFR_FSDKMatching();
@@ -131,7 +131,7 @@ public class DetecterActivity extends Activity implements OnCameraListener, View
                     String name = null;
                     for (FaceDB.FaceRegist fr : mResgist) {
                         for (AFR_FSDKFace face : fr.mFaceList) {
-                            error = engine.AFR_FSDK_FacePairMatching(regResult, face, score);
+                            error = FREngine.AFR_FSDK_FacePairMatching(regResult, face, score);
                             Log.d(TAG, "Score:" + score.getScore() + ", AFR_FSDK_FacePairMatching=" + error.getCode());
                             if (max < score.getScore()) {
                                 max = score.getScore();
@@ -229,7 +229,7 @@ public class DetecterActivity extends Activity implements OnCameraListener, View
 
         @Override
         public void over() {
-            AFR_FSDKError error = engine.AFR_FSDK_UninitialEngine();
+            AFR_FSDKError error = FREngine.AFR_FSDK_UninitialEngine();
             Log.d(TAG, "AFR_FSDK_UninitialEngine : " + error.getCode());
         }
     }
