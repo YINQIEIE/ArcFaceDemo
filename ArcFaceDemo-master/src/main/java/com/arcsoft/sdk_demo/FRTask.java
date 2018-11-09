@@ -34,6 +34,11 @@ public class FRTask extends AbsLoop {
 
     private byte[] mImageNV21 = null;
     private List<AFT_FSDKFace> resultRecorder;
+
+    public boolean isLoop() {
+        return loop;
+    }
+
     private boolean loop = true;
     private FaceMatchListener faceMatchListener;
 
@@ -99,6 +104,7 @@ public class FRTask extends AbsLoop {
                 }
             }
         }
+        loop = true;
         resultRecorder.clear();
     }
 
