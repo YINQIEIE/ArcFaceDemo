@@ -90,9 +90,9 @@ public class DetecterActivity extends Activity implements OnCameraListener, View
         //snap
         mTextView = findViewById(R.id.textView);
         mTextView.setText("");
-        mTextView1 =  findViewById(R.id.textView1);
+        mTextView1 = findViewById(R.id.textView1);
         mTextView1.setText("");
-        mImageView =  findViewById(R.id.imageView);
+        mImageView = findViewById(R.id.imageView);
 
         mTextView.setVisibility(View.INVISIBLE);
         mTextView1.setVisibility(View.INVISIBLE);

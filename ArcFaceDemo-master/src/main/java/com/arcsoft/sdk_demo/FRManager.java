@@ -27,6 +27,10 @@ public class FRManager {
     private final ASGE_FSDKVersion mGenderVersion;
     private final ASGE_FSDKEngine mGenderEngine;
 
+    public FRTask getmFRTask() {
+        return mFRTask;
+    }
+
     private FRTask mFRTask;
 
     public FRManager() {
@@ -59,14 +63,14 @@ public class FRManager {
 
     public void setFaceMatchListener(FRTask.FaceMatchListener listener) {
         if (null == mFRTask)
-            throw new IllegalStateException("call method<init> fist!");
+            throw new IllegalStateException("call method<init> first!");
         if (null != listener)
             mFRTask.setFaceMatchListener(listener);
     }
 
     public void startFRTask() {
         if (null == mFRTask)
-            throw new IllegalStateException("call method<init> fist!");
+            throw new IllegalStateException("call method<init> first!");
         mFRTask.start();
     }
 
@@ -88,7 +92,7 @@ public class FRManager {
 
     public byte[] getmImageNV21() {
         if (null == mFRTask)
-            throw new IllegalStateException("call method<init> fist!");
+            throw new IllegalStateException("call method<init> first!");
         return mFRTask.getmImageNV21();
     }
 
