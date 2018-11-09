@@ -65,12 +65,12 @@ public class DetecterActivity extends Activity implements OnCameraListener, View
     int mCameraID;
     int mCameraRotate;
     boolean mCameraMirror;
-    FRAbsLoop mFRTask = null;
+    FRTask mFRTask = null;
     Handler mHandler;
     private float score;
     private String name;
     private Bitmap bmp;
-    private FRAbsLoop.FaceMatchListener faceMatchListener = new FRAbsLoop.FaceMatchListener() {
+    private FRTask.FaceMatchListener faceMatchListener = new FRTask.FaceMatchListener() {
         @Override
         public void onMatch(float score, String name, Bitmap bmp) {
             DetecterActivity.this.score = score;
@@ -106,6 +106,7 @@ public class DetecterActivity extends Activity implements OnCameraListener, View
             adapter.notifyDataSetChanged();
         }
     };
+    private byte[] mImageNV21;
 
     private void onFaceMatch() {
         //fr success.
@@ -213,7 +214,7 @@ public class DetecterActivity extends Activity implements OnCameraListener, View
         error1 = mGenderEngine.ASGE_FSDK_GetVersion(mGenderVersion);
         Log.d(TAG, "ASGE_FSDK_GetVersion:" + mGenderVersion.toString() + "," + error1.getCode());
 
-        mFRTask = new FRAbsLoop(mWidth, mHeight, resultRecoder);
+        mFRTask = new FRTask(mWidth, mHeight, resultRecoder);
         mFRTask.setFaceMatchListener(faceMatchListener);
         mFRTask.start();
     }
@@ -234,7 +235,6 @@ public class DetecterActivity extends Activity implements OnCameraListener, View
 
     @Override
     public Camera setupCamera() {
-        // TODO Auto-generated method stub
         mCamera = Camera.open(mCameraID);
         try {
             Camera.Parameters parameters = mCamera.getParameters();
@@ -287,19 +287,12 @@ public class DetecterActivity extends Activity implements OnCameraListener, View
     public Object onPreview(byte[] data, int width, int height, int format, long timestamp) {
         AFT_FSDKError err = engine.AFT_FSDK_FaceFeatureDetect(data, width, height, AFT_FSDKEngine.CP_PAF_NV21, result);
         Log.d(TAG, "onPreview:AFT_FSDK_FaceFeatureDetect =" + err.getCode());
-        Log.d(TAG, "onPreview:Face=" + result.size());
-        for (AFT_FSDKFace face : result) {
-            Log.d(TAG, "onPreview:Face:" + face.toString());
-        }
-        byte[] mImageNV21 = mFRTask.getmImageNV21();
+        mImageNV21 = mFRTask.getmImageNV21();
         if (mImageNV21 == null) {
-            Log.d("Face", "onPreview: mImageNV21 == null");
             if (!result.isEmpty()) {
-                Log.d("Face", "onPreview: !result.isEmpty()");
 //                mAFT_FSDKFace = result.get(0).clone();
                 mImageNV21 = data.clone();
                 mFRTask.setmImageNV21(mImageNV21);
-                Log.d("Face", "onPreview: mImageNV21 == null:" + (mImageNV21 == null));
                 for (int i = 0; i < result.size(); i++) {
                     resultRecoder.add(new AFT_FSDKFace(result.get(i)));
                 }
@@ -312,14 +305,6 @@ public class DetecterActivity extends Activity implements OnCameraListener, View
         for (int i = 0; i < result.size(); i++) {
             rects[i] = new Rect(result.get(i).getRect());
         }
-//        if (mFRTask.isLoop()) {
-//            mImageNV21 = data.clone();
-//            mFRTask.setmImageNV21(mImageNV21);
-//            for (int i = 0; i < result.size(); i++) {
-//                resultRecoder.add(new AFT_FSDKFace(result.get(i)));
-//            }
-//        }
-        //clear result.
         result.clear();
         //return the rects for render.
         return rects;

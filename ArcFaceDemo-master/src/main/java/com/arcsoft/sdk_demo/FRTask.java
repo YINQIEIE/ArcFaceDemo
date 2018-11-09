@@ -30,24 +30,17 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FRAbsLoop extends AbsLoop {
+public class FRTask extends AbsLoop {
 
     private String TAG = getClass().getSimpleName();
 
     private AFR_FSDKVersion version = new AFR_FSDKVersion();
     private AFR_FSDKEngine engine = new AFR_FSDKEngine();
     private AFR_FSDKFace regResult = new AFR_FSDKFace();
+    //已注册人脸信息
     private List<FaceDB.FaceRegist> mResgist = MyApplication.mFaceDB.mRegister;
-    private List<ASAE_FSDKFace> face1 = new ArrayList<>();
-    private List<ASGE_FSDKFace> face2 = new ArrayList<>();
 
     private int mWidth, mHeight;
-    private ASAE_FSDKEngine mAgeEngine = new ASAE_FSDKEngine();
-    private ASGE_FSDKVersion mGenderVersion = new ASGE_FSDKVersion();
-    private ASGE_FSDKEngine mGenderEngine = new ASGE_FSDKEngine();
-
-    private List<ASAE_FSDKAge> ages = new ArrayList<>();
-    private List<ASGE_FSDKGender> genders = new ArrayList<>();
 
     private AFT_FSDKFace mAFT_FSDKFace = null;
 
@@ -56,7 +49,7 @@ public class FRAbsLoop extends AbsLoop {
     private boolean loop = true;
     private FaceMatchListener faceMatchListener;
 
-    public FRAbsLoop(int mWidth, int mHeight, List<AFT_FSDKFace> resultRecoder) {
+    public FRTask(int mWidth, int mHeight, List<AFT_FSDKFace> resultRecoder) {
         this.mWidth = mWidth;
         this.mHeight = mHeight;
         this.resultRecoder = resultRecoder;
@@ -99,18 +92,6 @@ public class FRAbsLoop extends AbsLoop {
                     }
                 }
 
-                //age & gender
-                face1.clear();
-                face2.clear();
-                face1.add(new ASAE_FSDKFace(mAFT_FSDKFace.getRect(), mAFT_FSDKFace.getDegree()));
-                face2.add(new ASGE_FSDKFace(mAFT_FSDKFace.getRect(), mAFT_FSDKFace.getDegree()));
-//                ASAE_FSDKError error1 = mAgeEngine.ASAE_FSDK_AgeEstimation_Image(mImageNV21, mWidth, mHeight, AFT_FSDKEngine.CP_PAF_NV21, face1, ages);
-//                ASGE_FSDKError error2 = mGenderEngine.ASGE_FSDK_GenderEstimation_Image(mImageNV21, mWidth, mHeight, AFT_FSDKEngine.CP_PAF_NV21, face2, genders);
-//                Log.d(TAG, "ASAE_FSDK_AgeEstimation_Image:" + error1.getCode() + ",ASGE_FSDK_GenderEstimation_Image:" + error2.getCode());
-//                Log.d(TAG, "age:" + ages.get(0).getAge() + ",gender:" + genders.get(0).getGender());
-//                final String age = ages.get(0).getAge() == 0 ? "年龄未知" : ages.get(0).getAge() + "岁";
-//                final String gender = genders.get(0).getGender() == -1 ? "性别未知" : (genders.get(0).getGender() == 0 ? "男" : "女");
-
                 //crop
                 byte[] data = mImageNV21;
                 YuvImage yuv = new YuvImage(data, ImageFormat.NV21, mWidth, mHeight, null);
@@ -130,9 +111,7 @@ public class FRAbsLoop extends AbsLoop {
                         faceMatchListener.onMatchDone();
                 }
             }
-            Log.i(TAG, "fit Score: one loop end");
         }
-        loop = true;
         resultRecoder.clear();
     }
 
