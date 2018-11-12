@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.media.ExifInterface;
 import android.net.Uri;
+import android.os.Environment;
 import android.util.Log;
 
 /**
@@ -20,7 +21,7 @@ public class MyApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        mFaceDB = new FaceDB(this.getExternalCacheDir().getPath());
+        mFaceDB = new FaceDB(Environment.getExternalStorageDirectory().getPath());
         mImage = null;
     }
 

@@ -174,7 +174,7 @@ public class DetecterActivity extends Activity implements OnCameraListener, View
         Log.d(TAG, "onPreview:AFT_FSDK_FaceFeatureDetect =" + err.getCode());
 //        if (result.isEmpty()) return new Rect[0];
         mImageNV21 = frManager.getmImageNV21();
-        if (mImageNV21 == null) {
+        if (frManager.getmFRTask().isLoop()) {
             if (!result.isEmpty()) {
 //                mAFT_FSDKFace = result.get(0).clone();
                 mImageNV21 = data.clone();
