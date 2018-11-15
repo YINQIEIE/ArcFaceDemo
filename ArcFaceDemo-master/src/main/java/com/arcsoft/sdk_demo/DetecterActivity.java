@@ -10,11 +10,16 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.WindowManager;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.arcsoft.facetracking.AFT_FSDKEngine;
 import com.arcsoft.facetracking.AFT_FSDKError;
@@ -28,6 +33,8 @@ import com.guo.android_extend.widget.CameraSurfaceView.OnCameraListener;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.arcsoft.sdk_demo.CameraManager.setUpCamera;
+
 /**
  * Created by gqj3375 on 2017/4/28.
  */
@@ -38,7 +45,7 @@ public class DetecterActivity extends Activity implements OnCameraListener, View
     private TextView mTextView;
     private TextView mTextView1;
     private ImageView mImageView;
-    private int mWidth, mHeight, mFormat;
+    private int mWidth, mHeight;
     private CameraGLSurfaceView mGLSurfaceView;
     private Camera mCamera;
 
@@ -63,30 +70,18 @@ public class DetecterActivity extends Activity implements OnCameraListener, View
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         super.onCreate(savedInstanceState);
-
-        mCameraID = getIntent().getIntExtra("Camera", 0) == 0 ? Camera.CameraInfo.CAMERA_FACING_BACK : Camera.CameraInfo.CAMERA_FACING_FRONT;
-        mCameraRotate = getIntent().getIntExtra("Camera", 0) == 0 ? 90 : 270;
-        mCameraMirror = getIntent().getIntExtra("Camera", 0) == 0 ? false : true;
-        mWidth = 1280;
-        mHeight = 960;
-        mFormat = ImageFormat.NV21;
-        mHandler = new Handler();
-
         setContentView(R.layout.activity_camera);
-        mGLSurfaceView = findViewById(R.id.glsurfaceView);
-        mGLSurfaceView.setOnTouchListener(this);
-        CameraSurfaceView mSurfaceView = findViewById(R.id.surfaceView);
-        mSurfaceView.setOnCameraListener(this);
-        mSurfaceView.setupGLSurafceView(mGLSurfaceView, true, mCameraMirror, mCameraRotate);
-        mSurfaceView.debug_print_fps(true, false);
+        mHandler = new Handler();
+        initCamera();
+        initSurfaceView();
+        initFR();
+        initRv();
+        initPhotoView();
+    }
 
-        rv_result = findViewById(R.id.rv_result);
-        adapter = new ResultAdapter(this, resultList, mCameraRotate, mCameraMirror);
-        LinearLayoutManager layoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
-        rv_result.setLayoutManager(layoutManager);
-        rv_result.setAdapter(adapter);
-
+    private void initPhotoView() {
         //snap
         mTextView = findViewById(R.id.textView);
         mTextView.setText("");
@@ -97,14 +92,58 @@ public class DetecterActivity extends Activity implements OnCameraListener, View
         mTextView.setVisibility(View.INVISIBLE);
         mTextView1.setVisibility(View.INVISIBLE);
         mImageView.setVisibility(View.INVISIBLE);
+    }
 
-        initFR();
+    private void initRv() {
+        rv_result = findViewById(R.id.rv_result);
+        adapter = new ResultAdapter(this, resultList, mCameraRotate, mCameraMirror);
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
+        rv_result.setLayoutManager(layoutManager);
+        rv_result.setAdapter(adapter);
+    }
+
+    private void initSurfaceView() {
+        mGLSurfaceView = findViewById(R.id.glsurfaceView);
+        mGLSurfaceView.setOnTouchListener(this);
+        CameraSurfaceView mSurfaceView = findViewById(R.id.surfaceView);
+        mSurfaceView.setOnCameraListener(this);
+        mSurfaceView.setupGLSurafceView(mGLSurfaceView, true, mCameraMirror, mCameraRotate);
+        mSurfaceView.debug_print_fps(true, false);
+    }
+
+    private void initCamera() {
+        int cameraId = getIntent().getIntExtra("Camera", 0);
+        mCameraID = cameraId == 0 ? Camera.CameraInfo.CAMERA_FACING_BACK : Camera.CameraInfo.CAMERA_FACING_FRONT;
+        mCameraRotate = cameraId == 0 ? 90 : 270;
+        mCameraMirror = cameraId != 0;
+        int[] size = getSurfaceSize();
+        mCamera = setUpCamera(mCameraID, size[0], size[1], ImageFormat.NV21);
+    }
+
+    /**
+     * 获取 surfaceView 的尺寸，来设置相机预览分辨率
+     *
+     * @return int[]
+     */
+    private int[] getSurfaceSize() {
+        RelativeLayout rlCamera = findViewById(R.id.rlCamera);
+        FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) rlCamera.getLayoutParams();
+        int top = layoutParams.topMargin;
+        Log.d(TAG, "getSurfaceSize: width = " + layoutParams.width + " height = " + layoutParams.height);
+        DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
+        int screenWidth = displayMetrics.widthPixels;
+        int screenHeight = displayMetrics.heightPixels;
+        return new int[]{screenHeight - top, screenWidth};
     }
 
     /**
      * 初始化人脸识别
      */
     private void initFR() {
+        mWidth = mCamera.getParameters().getPreviewSize().width;
+        mHeight = mCamera.getParameters().getPreviewSize().height;
+        Log.d(TAG, "initFR: " + mWidth + "x" + mHeight);
+        Toast.makeText(this, "initFR: " + mWidth + "x" + mHeight, Toast.LENGTH_LONG).show();
         frManager = new FRManager();
         frManager.init(mWidth, mHeight, resultRecorder);
         frManager.setFaceMatchListener(faceMatchListener);
@@ -120,41 +159,6 @@ public class DetecterActivity extends Activity implements OnCameraListener, View
 
     @Override
     public Camera setupCamera() {
-        mCamera = Camera.open(mCameraID);
-        try {
-            Camera.Parameters parameters = mCamera.getParameters();
-            parameters.setPreviewSize(mWidth, mHeight);
-            parameters.setPreviewFormat(mFormat);
-
-            for (Camera.Size size : parameters.getSupportedPreviewSizes()) {
-                Log.d(TAG, "SIZE:" + size.width + "x" + size.height);
-            }
-            for (Integer format : parameters.getSupportedPreviewFormats()) {
-                Log.d(TAG, "FORMAT:" + format);
-            }
-
-            List<int[]> fps = parameters.getSupportedPreviewFpsRange();
-            for (int[] count : fps) {
-                Log.d(TAG, "T:");
-                for (int data : count) {
-                    Log.d(TAG, "V=" + data);
-                }
-            }
-            //parameters.setPreviewFpsRange(15000, 30000);
-            //parameters.setExposureCompensation(parameters.getMaxExposureCompensation());
-            //parameters.setWhiteBalance(Camera.Parameters.WHITE_BALANCE_AUTO);
-            //parameters.setAntibanding(Camera.Parameters.ANTIBANDING_AUTO);
-            //parmeters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
-            //parameters.setSceneMode(Camera.Parameters.SCENE_MODE_AUTO);
-            //parameters.setColorEffect(Camera.Parameters.EFFECT_NONE);
-            mCamera.setParameters(parameters);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        if (mCamera != null) {
-            mWidth = mCamera.getParameters().getPreviewSize().width;
-            mHeight = mCamera.getParameters().getPreviewSize().height;
-        }
         return mCamera;
     }
 
@@ -175,6 +179,8 @@ public class DetecterActivity extends Activity implements OnCameraListener, View
 //        if (result.isEmpty()) return new Rect[0];
         mImageNV21 = frManager.getmImageNV21();
         if (frManager.getmFRTask().isLoop()) {
+            resultList.clear();
+            nameList.clear();
             if (!result.isEmpty()) {
 //                mAFT_FSDKFace = result.get(0).clone();
                 mImageNV21 = data.clone();
