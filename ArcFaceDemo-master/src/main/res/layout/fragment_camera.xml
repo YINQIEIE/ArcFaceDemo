@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/flCamera"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.guo.android_extend.widget.CameraSurfaceView
+        android:id="@+id/surfaceView"
+        android:layout_width="1dp"
+        android:layout_height="1dp" />
+
+    <com.arcsoft.sdk_demo.MyCameraGLSurfaceView
+        android:id="@+id/glSurfaceView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+</FrameLayout>

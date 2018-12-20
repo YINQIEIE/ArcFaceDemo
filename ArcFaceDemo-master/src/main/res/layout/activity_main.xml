@@ -20,4 +20,10 @@
         android:text="第二步：检测识别"
         android:textColor="@color/colorPrimary" />
 
+    <Button
+        android:id="@+id/btnFragment"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:text="使用 Fragment 进行人脸识别" />
+
 </LinearLayout>

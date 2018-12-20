@@ -19,6 +19,7 @@ import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.Button;
 import android.widget.Toast;
 
 public class MainActivity extends Activity implements OnClickListener {
@@ -40,6 +41,8 @@ public class MainActivity extends Activity implements OnClickListener {
         v.setOnClickListener(this);
         v = this.findViewById(R.id.button2);
         v.setOnClickListener(this);
+        Button btnFragment = findViewById(R.id.btnFragment);
+        btnFragment.setOnClickListener(this);
     }
 
     /* (non-Javadoc)
@@ -87,7 +90,7 @@ public class MainActivity extends Activity implements OnClickListener {
         // TODO Auto-generated method stub
         switch (paramView.getId()) {
             case R.id.button2:
-                if (((MyApplication) getApplicationContext()).mFaceDB.mRegister.isEmpty()) {
+                if (((MyApplication) getApplicationContext()).mFaceDB.getmRegister().isEmpty()) {
                     Toast.makeText(this, "没有注册人脸，请先注册！", Toast.LENGTH_SHORT).show();
                 } else {
                     new AlertDialog.Builder(this)
@@ -132,8 +135,12 @@ public class MainActivity extends Activity implements OnClickListener {
                         })
                         .show();
                 break;
+            case R.id.btnFragment:
+                Intent intent = new Intent(this, CameraFragmentTestActivity.class);
+                startActivity(intent);
+                break;
             default:
-                ;
+                break;
         }
     }
 

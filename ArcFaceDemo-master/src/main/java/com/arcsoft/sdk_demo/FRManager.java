@@ -21,16 +21,11 @@ public class FRManager {
 
     private final AFT_FSDKVersion version;
 
-    private final AFT_FSDKEngine engine;
-    private final ASAE_FSDKVersion mAgeVersion;
-    private final ASAE_FSDKEngine mAgeEngine;
-    private final ASGE_FSDKVersion mGenderVersion;
-    private final ASGE_FSDKEngine mGenderEngine;
-
-    public FRTask getmFRTask() {
-        return mFRTask;
-    }
-
+    private AFT_FSDKEngine engine;
+    private ASAE_FSDKVersion mAgeVersion;
+    private ASAE_FSDKEngine mAgeEngine;
+    private ASGE_FSDKVersion mGenderVersion;
+    private ASGE_FSDKEngine mGenderEngine;
     private FRTask mFRTask;
 
     public FRManager() {
@@ -42,9 +37,10 @@ public class FRManager {
         mGenderEngine = new ASGE_FSDKEngine();
     }
 
-    public void init(int mWidth, int mHeight, List<AFT_FSDKFace> resultRecorder) {
+    public void init(int mWidth, int mHeight, List<AFT_FSDKFace> resultRecorder, List<FaceDB.FaceRegist> mResgist) {
         AFT_FSDKError err = engine.AFT_FSDK_InitialFaceEngine(FaceDB.appid, FaceDB.ft_key, AFT_FSDKEngine.AFT_OPF_0_HIGHER_EXT, 16, 5);
         Log.d(TAG, "AFT_FSDK_InitialFaceEngine =" + err.getCode());
+
         err = engine.AFT_FSDK_GetVersion(version);
         Log.d(TAG, "AFT_FSDK_GetVersion:" + version.toString() + "," + err.getCode());
 
@@ -58,19 +54,17 @@ public class FRManager {
         error1 = mGenderEngine.ASGE_FSDK_GetVersion(mGenderVersion);
         Log.d(TAG, "ASGE_FSDK_GetVersion:" + mGenderVersion.toString() + "," + error1.getCode());
 
-        mFRTask = new FRTask(mWidth, mHeight, resultRecorder);
+        mFRTask = new FRTask(mResgist, mWidth, mHeight, resultRecorder);
     }
 
     public void setFaceMatchListener(FRTask.FaceMatchListener listener) {
-        if (null == mFRTask)
-            throw new IllegalStateException("call method<init> first!");
+        checkTaskNotNull();
         if (null != listener)
             mFRTask.setFaceMatchListener(listener);
     }
 
     public void startFRTask() {
-        if (null == mFRTask)
-            throw new IllegalStateException("call method<init> first!");
+        checkTaskNotNull();
         mFRTask.start();
     }
 
@@ -84,6 +78,7 @@ public class FRManager {
 
         ASGE_FSDKError err2 = mGenderEngine.ASGE_FSDK_UninitGenderEngine();
         Log.d(TAG, "ASGE_FSDK_UninitGenderEngine =" + err2.getCode());
+        engine = null;
     }
 
     public AFT_FSDKEngine getEngine() {
@@ -91,15 +86,42 @@ public class FRManager {
     }
 
     public byte[] getmImageNV21() {
-        if (null == mFRTask)
-            throw new IllegalStateException("call method<init> first!");
+        checkTaskNotNull();
         return mFRTask.getmImageNV21();
     }
 
     public void setmImageNV21(byte[] mImageNV21) {
+        checkTaskNotNull();
+        mFRTask.setmImageNV21(mImageNV21);
+    }
+
+    private void checkTaskNotNull() {
         if (null == mFRTask)
             throw new IllegalStateException("call method<init> fist!");
-        mFRTask.setmImageNV21(mImageNV21);
+    }
+
+    public FRTask getmFRTask() {
+        return mFRTask;
+    }
+
+    public void setOnFaceDetectedListener(FRTask.OnFaceDetectedListener onFaceDetectedListener) {
+        checkTaskNotNull();
+        mFRTask.setOnFaceDetectedListener(onFaceDetectedListener);
+    }
+
+    public boolean isTaskRunning() {
+        checkTaskNotNull();
+        return mFRTask.isAlive();
+    }
+
+    /**
+     * 设置识别延时时间，单位：ms
+     *
+     * @param delay 时间
+     */
+    public void setDelay(int delay) {
+        checkTaskNotNull();
+        mFRTask.setDelay(delay);
     }
 
 }

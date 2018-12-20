@@ -311,7 +311,7 @@ public class RegisterActivity extends Activity implements SurfaceHolder.Callback
         @Override
         public int getCount() {
             // TODO Auto-generated method stub
-            return ((MyApplication) mContext.getApplicationContext()).mFaceDB.mRegister.size();
+            return ((MyApplication) mContext.getApplicationContext()).mFaceDB.getmRegister().size();
         }
 
         @Override
@@ -340,8 +340,8 @@ public class RegisterActivity extends Activity implements SurfaceHolder.Callback
                 convertView.setTag(holder);
             }
 
-            if (!((MyApplication) mContext.getApplicationContext()).mFaceDB.mRegister.isEmpty()) {
-                FaceDB.FaceRegist face = ((MyApplication) mContext.getApplicationContext()).mFaceDB.mRegister.get(position);
+            if (!((MyApplication) mContext.getApplicationContext()).mFaceDB.getmRegister().isEmpty()) {
+                FaceDB.FaceRegist face = ((MyApplication) mContext.getApplicationContext()).mFaceDB.getmRegister().get(position);
                 holder.tv.setText(face.mName);
                 //holder.siv.setImageResource(R.mipmap.ic_launcher);
                 convertView.setWillNotDraw(false);
@@ -353,8 +353,8 @@ public class RegisterActivity extends Activity implements SurfaceHolder.Callback
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
             Log.d("onItemClick", "onItemClick = " + position + "pos=" + mHListView.getScroll());
-            final String name = ((MyApplication) mContext.getApplicationContext()).mFaceDB.mRegister.get(position).mName;
-            final int count = ((MyApplication) mContext.getApplicationContext()).mFaceDB.mRegister.get(position).mFaceList.size();
+            final String name = ((MyApplication) mContext.getApplicationContext()).mFaceDB.getmRegister().get(position).mName;
+            final int count = ((MyApplication) mContext.getApplicationContext()).mFaceDB.getmRegister().get(position).mFaceList.size();
             new AlertDialog.Builder(RegisterActivity.this)
                     .setTitle("删除注册名:" + name)
                     .setMessage("包含:" + count + "个注册人脸特征信息")

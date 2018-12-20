@@ -145,7 +145,7 @@ public class DetecterActivity extends Activity implements OnCameraListener, View
         Log.d(TAG, "initFR: " + mWidth + "x" + mHeight);
         Toast.makeText(this, "initFR: " + mWidth + "x" + mHeight, Toast.LENGTH_LONG).show();
         frManager = new FRManager();
-        frManager.init(mWidth, mHeight, resultRecorder);
+        frManager.init(mWidth, mHeight, resultRecorder, MyApplication.mFaceDB.getmRegister());
         frManager.setFaceMatchListener(faceMatchListener);
         frManager.startFRTask();
     }

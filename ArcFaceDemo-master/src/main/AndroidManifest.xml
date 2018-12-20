@@ -18,6 +18,7 @@
         <activity android:name="com.arcsoft.sdk_demo.PermissionActiivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+                <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
@@ -25,6 +26,7 @@
         <activity android:name="com.arcsoft.sdk_demo.RegisterActivity" />
         <activity android:name="com.arcsoft.sdk_demo.DetecterActivity" />
         <activity android:name="com.arcsoft.sdk_demo.MainActivity" />
+        <activity android:name=".CameraFragmentTestActivity" />
     </application>
 
 </manifest>

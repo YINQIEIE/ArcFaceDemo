@@ -4,6 +4,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
 import android.graphics.YuvImage;
+import android.os.SystemClock;
 import android.util.Log;
 
 import com.arcsoft.facerecognition.AFR_FSDKEngine;
@@ -25,16 +26,24 @@ public class FRTask extends AbsLoop {
     private AFR_FSDKVersion version = new AFR_FSDKVersion();
     private AFR_FSDKEngine engine = new AFR_FSDKEngine();
     private AFR_FSDKFace regResult = new AFR_FSDKFace();
+
     //已注册人脸信息
-    private List<FaceDB.FaceRegist> mResgist = MyApplication.mFaceDB.mRegister;
+    private List<FaceDB.FaceRegist> mResgist;
+
     private int mWidth, mHeight;
+
     private byte[] mImageNV21 = null;
     private AFT_FSDKFace mAFT_FSDKFace = null;
     private List<AFT_FSDKFace> resultRecorder;
-    private boolean loop = true;
-    private FaceMatchListener faceMatchListener;
 
-    public FRTask(int mWidth, int mHeight, List<AFT_FSDKFace> resultRecorder) {
+    private boolean loop = true;
+    private int delay = 2000;//每次识别出人脸后停顿时间
+
+    private FaceMatchListener faceMatchListener;
+    private OnFaceDetectedListener onFaceDetectedListener;
+
+    public FRTask(List<FaceDB.FaceRegist> mResgist, int mWidth, int mHeight, List<AFT_FSDKFace> resultRecorder) {
+        this.mResgist = mResgist;
         this.mWidth = mWidth;
         this.mHeight = mHeight;
         this.resultRecorder = resultRecorder;
@@ -51,7 +60,7 @@ public class FRTask extends AbsLoop {
     @Override
     public void loop() {
         if (!loop) return;
-        Log.d(TAG, "loop: looping");
+//        SystemClock.sleep(500);
         for (int i = 0; i < resultRecorder.size(); i++) {
             loop = false;
             AFT_FSDKFace aft_fsdkFace = resultRecorder.get(i);
@@ -63,6 +72,13 @@ public class FRTask extends AbsLoop {
                 AFR_FSDKError error = engine.AFR_FSDK_ExtractFRFeature(mImageNV21, mWidth, mHeight, AFR_FSDKEngine.CP_PAF_NV21, mAFT_FSDKFace.getRect(), mAFT_FSDKFace.getDegree(), regResult);
                 Log.d(TAG, "AFR_FSDK_ExtractFRFeature cost :" + (System.currentTimeMillis() - time) + "ms");
                 Log.d(TAG, "Face=" + regResult.getFeatureData()[0] + "," + regResult.getFeatureData()[1] + "," + regResult.getFeatureData()[2] + "," + error.getCode());
+
+                if (null != regResult.getFeatureData()) {
+                    if (null != onFaceDetectedListener)
+                        onFaceDetectedListener.onFaceDetected(regResult.clone());
+                }
+//                一次只处理一个人脸数据
+                if (i == 0) break;
                 AFR_FSDKMatching score = new AFR_FSDKMatching();
                 float max = 0.0f;
                 String name = null;
@@ -76,7 +92,6 @@ public class FRTask extends AbsLoop {
                         }
                     }
                 }
-
                 //crop
                 byte[] data = mImageNV21;
                 YuvImage yuv = new YuvImage(data, ImageFormat.NV21, mWidth, mHeight, null);
@@ -97,7 +112,11 @@ public class FRTask extends AbsLoop {
                 }
             }
         }
-        loop = true;
+        if (!loop) {
+            SystemClock.sleep(delay);
+            loop = true;
+        }
+//        regResult.setFeatureData(null);
         resultRecorder.clear();
     }
 
@@ -105,6 +124,13 @@ public class FRTask extends AbsLoop {
     public void over() {
         AFR_FSDKError error = engine.AFR_FSDK_UninitialEngine();
         Log.d(TAG, "AFR_FSDK_UninitialEngine : " + error.getCode());
+        engine = null;
+        if (null != regResult) {
+            regResult.setFeatureData(null);
+            regResult = null;
+        }
+        mAFT_FSDKFace = null;
+        resultRecorder.clear();
     }
 
     public byte[] getmImageNV21() {
@@ -115,6 +141,9 @@ public class FRTask extends AbsLoop {
         this.mImageNV21 = mImageNV21;
     }
 
+    /**
+     * 匹配到人脸回调接口
+     */
     public interface FaceMatchListener {
         void onMatch(float score, String name, Bitmap bmp);
 
@@ -125,8 +154,27 @@ public class FRTask extends AbsLoop {
         this.faceMatchListener = faceMatchListener;
     }
 
+    /**
+     * 检测到人脸回调接口
+     */
+    public interface OnFaceDetectedListener {
+        void onFaceDetected(AFR_FSDKFace face);
+    }
+
+    public void setOnFaceDetectedListener(OnFaceDetectedListener onFaceDetectedListener) {
+        this.onFaceDetectedListener = onFaceDetectedListener;
+    }
+
     public boolean isLoop() {
         return loop;
     }
 
+    /**
+     * 设置识别延时时间，单位：ms
+     *
+     * @param delay 时间
+     */
+    public void setDelay(int delay) {
+        this.delay = delay;
+    }
 }
