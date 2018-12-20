@@ -22,10 +22,15 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
 }
 
 dependencies {
     implementation 'com.android.support:support-v4:27.1.1'
+    implementation 'com.android.support:appcompat-v7:27.1.1'
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     //    compile files('libs/facedetection.jar')
     //    compile files('libs/facerecognition.jar')
@@ -34,4 +39,13 @@ dependencies {
     //    compile files('libs/genderestimation.jar')
     implementation 'com.guo.android_extend:android-extend:1.0.1'
     implementation 'com.android.support:recyclerview-v7:27.1.1'
+}
+
+repositories {
+    google()
+}
+buildscript {
+    repositories {
+        google()
+    }
 }

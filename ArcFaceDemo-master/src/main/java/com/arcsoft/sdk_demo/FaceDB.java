@@ -31,15 +31,15 @@ public class FaceDB {
     public static String age_key = "B53QHu6jbX2jdA51pkfJJrTnDjx6c8yctea9a7hxK2Hp";
     public static String gender_key = "B53QHu6jbX2jdA51pkfJJrTuP9DGVy4oUYRnGjBM4PTJ";
 
-    String mDBPath;
-    List<FaceRegist> mRegister;
-    AFR_FSDKEngine mFREngine;
-    AFR_FSDKVersion mFRVersion;
+    private String mDBPath;
+    private List<FaceRegist> mRegister;
+    private AFR_FSDKEngine mFREngine;
+    private AFR_FSDKVersion mFRVersion;
     boolean mUpgrade;
 
-    class FaceRegist {
-        String mName;
-        List<AFR_FSDKFace> mFaceList;
+    public class FaceRegist {
+        public String mName;
+        public List<AFR_FSDKFace> mFaceList;
 
         public FaceRegist(String name) {
             mName = name;
@@ -66,6 +66,7 @@ public class FaceDB {
         if (mFREngine != null) {
             mFREngine.AFR_FSDK_UninitialEngine();
         }
+        mRegister.clear();
     }
 
     private boolean saveInfo() {
@@ -226,5 +227,9 @@ public class FaceDB {
 
     public boolean upgrade() {
         return false;
+    }
+
+    public List<FaceRegist> getmRegister() {
+        return mRegister;
     }
 }

@@ -84,7 +84,7 @@ public class RegisterActivity extends Activity implements SurfaceHolder.Callback
         mHListView.setOnItemClickListener(mRegisterViewAdapter);
 
         mUIHandler = new UIHandler();
-        mBitmap = Application.decodeImage(mFilePath);
+        mBitmap = MyApplication.decodeImage(mFilePath);
         src.set(0, 0, mBitmap.getWidth(), mBitmap.getHeight());
         mSurfaceView = (SurfaceView) this.findViewById(R.id.surfaceView);
         mSurfaceView.getHolder().addCallback(this);
@@ -268,7 +268,7 @@ public class RegisterActivity extends Activity implements SurfaceHolder.Callback
                             .setPositiveButton("确定", new DialogInterface.OnClickListener() {
                                 @Override
                                 public void onClick(DialogInterface dialog, int which) {
-                                    ((Application) RegisterActivity.this.getApplicationContext()).mFaceDB.addFace(mEditText.getText().toString(), mAFR_FSDKFace);
+                                    ((MyApplication) RegisterActivity.this.getApplicationContext()).mFaceDB.addFace(mEditText.getText().toString(), mAFR_FSDKFace);
                                     mRegisterViewAdapter.notifyDataSetChanged();
                                     dialog.dismiss();
                                 }
@@ -311,7 +311,7 @@ public class RegisterActivity extends Activity implements SurfaceHolder.Callback
         @Override
         public int getCount() {
             // TODO Auto-generated method stub
-            return ((Application) mContext.getApplicationContext()).mFaceDB.mRegister.size();
+            return ((MyApplication) mContext.getApplicationContext()).mFaceDB.getmRegister().size();
         }
 
         @Override
@@ -340,8 +340,8 @@ public class RegisterActivity extends Activity implements SurfaceHolder.Callback
                 convertView.setTag(holder);
             }
 
-            if (!((Application) mContext.getApplicationContext()).mFaceDB.mRegister.isEmpty()) {
-                FaceDB.FaceRegist face = ((Application) mContext.getApplicationContext()).mFaceDB.mRegister.get(position);
+            if (!((MyApplication) mContext.getApplicationContext()).mFaceDB.getmRegister().isEmpty()) {
+                FaceDB.FaceRegist face = ((MyApplication) mContext.getApplicationContext()).mFaceDB.getmRegister().get(position);
                 holder.tv.setText(face.mName);
                 //holder.siv.setImageResource(R.mipmap.ic_launcher);
                 convertView.setWillNotDraw(false);
@@ -353,8 +353,8 @@ public class RegisterActivity extends Activity implements SurfaceHolder.Callback
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
             Log.d("onItemClick", "onItemClick = " + position + "pos=" + mHListView.getScroll());
-            final String name = ((Application) mContext.getApplicationContext()).mFaceDB.mRegister.get(position).mName;
-            final int count = ((Application) mContext.getApplicationContext()).mFaceDB.mRegister.get(position).mFaceList.size();
+            final String name = ((MyApplication) mContext.getApplicationContext()).mFaceDB.getmRegister().get(position).mName;
+            final int count = ((MyApplication) mContext.getApplicationContext()).mFaceDB.getmRegister().get(position).mFaceList.size();
             new AlertDialog.Builder(RegisterActivity.this)
                     .setTitle("删除注册名:" + name)
                     .setMessage("包含:" + count + "个注册人脸特征信息")
@@ -362,7 +362,7 @@ public class RegisterActivity extends Activity implements SurfaceHolder.Callback
                     .setPositiveButton("确定", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            ((Application) mContext.getApplicationContext()).mFaceDB.delete(name);
+                            ((MyApplication) mContext.getApplicationContext()).mFaceDB.delete(name);
                             mRegisterViewAdapter.notifyDataSetChanged();
                             dialog.dismiss();
                         }
