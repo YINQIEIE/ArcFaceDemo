@@ -77,8 +77,6 @@ public class FRTask extends AbsLoop {
                     if (null != onFaceDetectedListener)
                         onFaceDetectedListener.onFaceDetected(regResult.clone());
                 }
-//                一次只处理一个人脸数据
-                if (i == 0) break;
                 AFR_FSDKMatching score = new AFR_FSDKMatching();
                 float max = 0.0f;
                 String name = null;
