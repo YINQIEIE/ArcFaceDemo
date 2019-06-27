@@ -2,6 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     android:padding="20dp">
 
@@ -20,10 +21,19 @@
         android:text="第二步：检测识别"
         android:textColor="@color/colorPrimary" />
 
+    <android.support.v7.widget.SwitchCompat
+        android:id="@+id/swMultiFace"
+        android:layout_width="wrap_content"
+        android:layout_height="30dp"
+        android:layout_margin="10dp"
+        android:drawablePadding="20dp"
+        app:switchPadding="20dp"
+        android:text="是否支持多张人脸" />
+
     <Button
         android:id="@+id/btnFragment"
         android:layout_width="match_parent"
         android:layout_height="50dp"
-        android:text="使用 Fragment 进行人脸识别" />
+        android:text="使用 Fragment 进行人脸识别(仅检测人脸)" />
 
 </LinearLayout>

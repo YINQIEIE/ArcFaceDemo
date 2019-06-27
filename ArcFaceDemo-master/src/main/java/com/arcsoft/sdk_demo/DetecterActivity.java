@@ -144,7 +144,7 @@ public class DetecterActivity extends Activity implements OnCameraListener, View
         mHeight = mCamera.getParameters().getPreviewSize().height;
         Log.d(TAG, "initFR: " + mWidth + "x" + mHeight);
         Toast.makeText(this, "initFR: " + mWidth + "x" + mHeight, Toast.LENGTH_LONG).show();
-        frManager = new FRManager();
+        frManager = new FRManager(getIntent().getBooleanExtra("supportMultiFace", false));
         frManager.init(mWidth, mHeight, resultRecorder, MyApplication.mFaceDB.getmRegister());
         frManager.setFaceMatchListener(faceMatchListener);
         frManager.startFRTask();
@@ -257,6 +257,8 @@ public class DetecterActivity extends Activity implements OnCameraListener, View
     Runnable faceMatchDoneRunnable = new Runnable() {
         @Override
         public void run() {
+//            Toast.makeText(DetecterActivity.this, "done! size = " + resultList.size(), Toast.LENGTH_LONG).show();
+            Log.i(TAG, " done! size = "  + resultList.size());
             adapter.notifyDataSetChanged();
         }
     };
@@ -266,27 +268,36 @@ public class DetecterActivity extends Activity implements OnCameraListener, View
             Log.d(TAG, "fit Score:" + score + ", NAME:" + name);
             final String mNameShow = name;
             mHandler.removeCallbacks(hide);
-            mHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    mTextView.setAlpha(1.0f);
-                    mTextView.setText(mNameShow);
-                    mTextView.setTextColor(Color.RED);
-//                                mTextView1.setVisibility(View.VISIBLE);
-                    mTextView1.setText("置信度：" + (float) ((int) (score * 1000)) / 1000.0);
-                    mTextView1.setTextColor(Color.RED);
-                    mImageView.setRotation(mCameraRotate);
-                    if (mCameraMirror) {
-                        mImageView.setScaleY(-1);
-                    }
-                    mImageView.setImageAlpha(255);
-                    mImageView.setImageBitmap(bmp);
-                    if (!nameList.contains(mNameShow)) {
-                        nameList.add(mNameShow);
-                        resultList.add(new ResultBean(mNameShow, "置信度：" + (float) ((int) (score * 1000)) / 1000.0, bmp));
-                    }
-                }
-            });
+            if (!nameList.contains(mNameShow)) {
+                nameList.add(mNameShow);
+//                        Toast.makeText(DetecterActivity.this, name, Toast.LENGTH_LONG).show();
+                resultList.add(new ResultBean(mNameShow, "置信度：" + (float) ((int) (score * 1000)) / 1000.0, bmp));
+                Log.i(TAG, " done! match;size = "  + resultList.size());
+            }
+
+//            mHandler.post(new Runnable() {
+//                @Override
+//                public void run() {
+//                    mTextView.setAlpha(1.0f);
+//                    mTextView.setText(mNameShow);
+//                    mTextView.setTextColor(Color.RED);
+////                                mTextView1.setVisibility(View.VISIBLE);
+//                    mTextView1.setText("置信度：" + (float) ((int) (score * 1000)) / 1000.0);
+//                    mTextView1.setTextColor(Color.RED);
+//                    mImageView.setRotation(mCameraRotate);
+//                    if (mCameraMirror) {
+//                        mImageView.setScaleY(-1);
+//                    }
+//                    mImageView.setImageAlpha(255);
+//                    mImageView.setImageBitmap(bmp);
+//                    if (!nameList.contains(mNameShow)) {
+//                        nameList.add(mNameShow);
+////                        Toast.makeText(DetecterActivity.this, name, Toast.LENGTH_LONG).show();
+//                        resultList.add(new ResultBean(mNameShow, "置信度：" + (float) ((int) (score * 1000)) / 1000.0, bmp));
+//                        Log.i(TAG, " done! match;size = "  + resultList.size());
+//                    }
+//                }
+//            });
         } else {
             final String mNameShow = "未识别";
             runOnUiThread(new Runnable() {

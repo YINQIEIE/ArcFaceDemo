@@ -27,14 +27,19 @@ public class FRManager {
     private ASGE_FSDKVersion mGenderVersion;
     private ASGE_FSDKEngine mGenderEngine;
     private FRTask mFRTask;
+    private boolean supportMultiFace = false;
 
     public FRManager() {
+        this(false);
+    }
+    public FRManager(boolean supportMultiFace) {
         version = new AFT_FSDKVersion();
         engine = new AFT_FSDKEngine();
         mAgeVersion = new ASAE_FSDKVersion();
         mAgeEngine = new ASAE_FSDKEngine();
         mGenderVersion = new ASGE_FSDKVersion();
         mGenderEngine = new ASGE_FSDKEngine();
+        this.supportMultiFace = supportMultiFace;
     }
 
     public void init(int mWidth, int mHeight, List<AFT_FSDKFace> resultRecorder, List<FaceDB.FaceRegist> mResgist) {
@@ -54,7 +59,7 @@ public class FRManager {
         error1 = mGenderEngine.ASGE_FSDK_GetVersion(mGenderVersion);
         Log.d(TAG, "ASGE_FSDK_GetVersion:" + mGenderVersion.toString() + "," + error1.getCode());
 
-        mFRTask = new FRTask(mResgist, mWidth, mHeight, resultRecorder);
+        mFRTask = new FRTask(mResgist, mWidth, mHeight, resultRecorder,supportMultiFace);
     }
 
     public void setFaceMatchListener(FRTask.FaceMatchListener listener) {
@@ -123,5 +128,7 @@ public class FRManager {
         checkTaskNotNull();
         mFRTask.setDelay(delay);
     }
-
+    public boolean isSupportMultiFace() {
+        return supportMultiFace;
+    }
 }

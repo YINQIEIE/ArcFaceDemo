@@ -37,17 +37,25 @@ public class FRTask extends AbsLoop {
     private List<AFT_FSDKFace> resultRecorder;
 
     private boolean loop = true;
-    private int delay = 2000;//每次识别出人脸后停顿时间
+    private int delay = 500;//每次识别出人脸后停顿时间
 
     private FaceMatchListener faceMatchListener;
     private OnFaceDetectedListener onFaceDetectedListener;
 
+    private boolean supportMultiFace = false;
+
     public FRTask(List<FaceDB.FaceRegist> mResgist, int mWidth, int mHeight, List<AFT_FSDKFace> resultRecorder) {
+        this(mResgist, mWidth, mHeight, resultRecorder, false);
+    }
+
+    public FRTask(List<FaceDB.FaceRegist> mResgist, int mWidth, int mHeight, List<AFT_FSDKFace> resultRecorder, boolean supportMultiFace) {
         this.mResgist = mResgist;
         this.mWidth = mWidth;
         this.mHeight = mHeight;
         this.resultRecorder = resultRecorder;
+        this.supportMultiFace = supportMultiFace;
     }
+
 
     @Override
     public void setup() {
@@ -78,7 +86,7 @@ public class FRTask extends AbsLoop {
                         onFaceDetectedListener.onFaceDetected(regResult.clone());
                 }
 //                一次只处理一个人脸数据
-                if (i == 0) break;
+//                if (i == 0) break;
                 AFR_FSDKMatching score = new AFR_FSDKMatching();
                 float max = 0.0f;
                 String name = null;
@@ -105,10 +113,18 @@ public class FRTask extends AbsLoop {
                 }
                 if (null != faceMatchListener)
                     faceMatchListener.onMatch(max, name, bmp);
-                if (i == resultRecorder.size() - 1) {
+                if (!supportMultiFace && i == 0) {
+                    Log.i("supportMultiFace", supportMultiFace + ">>>" + i);
                     mImageNV21 = null;
                     if (null != faceMatchListener)
                         faceMatchListener.onMatchDone();
+                    break;
+                } else {
+                    if (i == resultRecorder.size() - 1) {
+                        mImageNV21 = null;
+                        if (null != faceMatchListener)
+                            faceMatchListener.onMatchDone();
+                    }
                 }
             }
         }

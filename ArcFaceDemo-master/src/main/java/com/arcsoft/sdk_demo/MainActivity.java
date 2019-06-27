@@ -16,6 +16,7 @@ import android.os.Environment;
 import android.os.Process;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
+import android.support.v7.widget.SwitchCompat;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -29,18 +30,19 @@ public class MainActivity extends Activity implements OnClickListener {
     private static final int REQUEST_CODE_IMAGE_OP = 2;
     private static final int REQUEST_CODE_OP = 3;
 
+    private SwitchCompat swMultiFace;
     /* (non-Javadoc)
      * @see android.app.Activity#onCreate(android.os.Bundle)
      */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        // TODO Auto-generated method stub
         super.onCreate(savedInstanceState);
         this.setContentView(R.layout.activity_main);
         View v = this.findViewById(R.id.button1);
         v.setOnClickListener(this);
         v = this.findViewById(R.id.button2);
         v.setOnClickListener(this);
+        swMultiFace = findViewById(R.id.swMultiFace);
         Button btnFragment = findViewById(R.id.btnFragment);
         btnFragment.setOnClickListener(this);
     }
@@ -50,7 +52,6 @@ public class MainActivity extends Activity implements OnClickListener {
      */
     @Override
     protected void onDestroy() {
-        // TODO Auto-generated method stub
         super.onDestroy();
         Process.killProcess(Process.myPid());
     }
@@ -275,6 +276,7 @@ public class MainActivity extends Activity implements OnClickListener {
     private void startDetector(int camera) {
         Intent it = new Intent(MainActivity.this, DetecterActivity.class);
         it.putExtra("Camera", camera);
+        it.putExtra("supportMultiFace",swMultiFace.isChecked());
         startActivityForResult(it, REQUEST_CODE_OP);
     }
 
