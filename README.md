@@ -1,5 +1,12 @@
 # ArcFaceDemo
-Free SDK demo
+ ArcfaceDemo_v1.2  </br>
+基于虹软 SDK V1.2 的人脸识别
+</br>使用：</br>
+1.可设置是否同时支持多张人脸识别；</br>
+2.设置人脸识别延时，即一次识别后多久再进行下次识别；</br>
+3.将人脸检测封装到fragment里，使用时只需要添加fragment，在回调里处理检测到的人脸数据,具体使用见CameraFragmentTestActivity.java；</br>
+4.本地人脸特征比对见 FRManager#compareWithLocalFaces()
+
 
 >工程如何使用？
  1. 下载代码:    
