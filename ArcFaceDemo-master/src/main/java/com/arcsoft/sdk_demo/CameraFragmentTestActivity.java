@@ -1,10 +1,13 @@
 package com.arcsoft.sdk_demo;
 
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.FrameLayout;
 
-public class CameraFragmentTestActivity extends AppCompatActivity {
+import com.arcsoft.facerecognition.AFR_FSDKFace;
+
+public class CameraFragmentTestActivity extends AppCompatActivity implements FRTask.OnFaceDetectedListener {
 
     private FrameLayout flContainer;
 
@@ -16,5 +19,10 @@ public class CameraFragmentTestActivity extends AppCompatActivity {
         getSupportFragmentManager().beginTransaction()
                 .add(R.id.flContainer, CameraFragment.createInstance(1))
                 .commit();
+    }
+
+    @Override
+    public void onFaceDetected(AFR_FSDKFace face, Bitmap faceBitmap) {
+        //handle face data here
     }
 }
