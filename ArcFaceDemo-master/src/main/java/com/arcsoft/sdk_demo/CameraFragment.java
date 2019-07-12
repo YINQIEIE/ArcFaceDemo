@@ -26,6 +26,7 @@ import com.guo.android_extend.widget.CameraSurfaceView;
 import java.util.ArrayList;
 import java.util.List;
 
+
 public class CameraFragment extends Fragment implements View.OnTouchListener, CameraSurfaceView.OnCameraListener, Camera.AutoFocusCallback {
 
     private final String TAG = getClass().getSimpleName();
@@ -82,7 +83,7 @@ public class CameraFragment extends Fragment implements View.OnTouchListener, Ca
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_camera, null, false);
+        return inflater.inflate(R.layout.fragment_camera, container, false);
     }
 
     @Override
@@ -139,13 +140,12 @@ public class CameraFragment extends Fragment implements View.OnTouchListener, Ca
         int mWidth = mCamera.getParameters().getPreviewSize().width;
         int mHeight = mCamera.getParameters().getPreviewSize().height;
         frManager = new FRManager();
-        frManager.init(mWidth, mHeight, resultRecorder, MyApplication.mFaceDB.getmRegister());
+        frManager.init(mWidth, mHeight, resultRecorder);
         frManager.setDelay(3000);
-//        frManager.setFaceMatchListener(faceMatchListener);
-        frManager.setOnFaceDetectedListener(afrFace -> {
-            Log.i(TAG, "initFR: face detected!");
+        frManager.setOnFaceDetectedListener((afrFace, faceBitmap) -> {
+                    Log.i(TAG, "initFR: face detected!");
                     if (null != onFaceDetectedListener)
-                        onFaceDetectedListener.onFaceDetected(afrFace);
+                        onFaceDetectedListener.onFaceDetected(afrFace, faceBitmap);
                 }
         );
         frManager.startFRTask();
@@ -163,7 +163,7 @@ public class CameraFragment extends Fragment implements View.OnTouchListener, Ca
 
     @Override
     public Object onPreview(byte[] data, int width, int height, int format, long timestamp) {
-        AFT_FSDKError err = frManager.getEngine().AFT_FSDK_FaceFeatureDetect(data, width, height, AFT_FSDKEngine.CP_PAF_NV21, result);
+        AFT_FSDKError err = frManager.getFdEngine().AFT_FSDK_FaceFeatureDetect(data, width, height, AFT_FSDKEngine.CP_PAF_NV21, result);
         Log.d(TAG, "onPreview:AFT_FSDK_FaceFeatureDetect =" + err.getCode());
         byte[] mImageNV21;
         if (frManager.getmFRTask().isLoop()) {

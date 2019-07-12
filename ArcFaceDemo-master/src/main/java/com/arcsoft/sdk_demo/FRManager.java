@@ -1,10 +1,15 @@
 package com.arcsoft.sdk_demo;
 
+import android.graphics.Bitmap;
 import android.util.Log;
 
 import com.arcsoft.ageestimation.ASAE_FSDKEngine;
 import com.arcsoft.ageestimation.ASAE_FSDKError;
 import com.arcsoft.ageestimation.ASAE_FSDKVersion;
+import com.arcsoft.facerecognition.AFR_FSDKEngine;
+import com.arcsoft.facerecognition.AFR_FSDKError;
+import com.arcsoft.facerecognition.AFR_FSDKFace;
+import com.arcsoft.facerecognition.AFR_FSDKMatching;
 import com.arcsoft.facetracking.AFT_FSDKEngine;
 import com.arcsoft.facetracking.AFT_FSDKError;
 import com.arcsoft.facetracking.AFT_FSDKFace;
@@ -21,7 +26,7 @@ public class FRManager {
 
     private final AFT_FSDKVersion version;
 
-    private AFT_FSDKEngine engine;
+    private AFT_FSDKEngine fdEngine;
     private ASAE_FSDKVersion mAgeVersion;
     private ASAE_FSDKEngine mAgeEngine;
     private ASGE_FSDKVersion mGenderVersion;
@@ -29,12 +34,21 @@ public class FRManager {
     private FRTask mFRTask;
     private boolean supportMultiFace = false;
 
+    /**
+     * 对比本地人脸数据使用
+     */
+    private static AFR_FSDKEngine frEngine = new AFR_FSDKEngine();
+    private static AFR_FSDKError error = frEngine.AFR_FSDK_InitialEngine(FaceDB.appid, FaceDB.fr_key);
+
+    private FaceMatchListener faceMatchListener;
+
     public FRManager() {
         this(false);
     }
+
     public FRManager(boolean supportMultiFace) {
         version = new AFT_FSDKVersion();
-        engine = new AFT_FSDKEngine();
+        fdEngine = new AFT_FSDKEngine();
         mAgeVersion = new ASAE_FSDKVersion();
         mAgeEngine = new ASAE_FSDKEngine();
         mGenderVersion = new ASGE_FSDKVersion();
@@ -42,11 +56,11 @@ public class FRManager {
         this.supportMultiFace = supportMultiFace;
     }
 
-    public void init(int mWidth, int mHeight, List<AFT_FSDKFace> resultRecorder, List<FaceDB.FaceRegist> mResgist) {
-        AFT_FSDKError err = engine.AFT_FSDK_InitialFaceEngine(FaceDB.appid, FaceDB.ft_key, AFT_FSDKEngine.AFT_OPF_0_HIGHER_EXT, 16, 5);
+    public void init(int mWidth, int mHeight, List<AFT_FSDKFace> resultRecorder) {
+        AFT_FSDKError err = fdEngine.AFT_FSDK_InitialFaceEngine(FaceDB.appid, FaceDB.ft_key, AFT_FSDKEngine.AFT_OPF_0_HIGHER_EXT, 16, 5);
         Log.d(TAG, "AFT_FSDK_InitialFaceEngine =" + err.getCode());
 
-        err = engine.AFT_FSDK_GetVersion(version);
+        err = fdEngine.AFT_FSDK_GetVersion(version);
         Log.d(TAG, "AFT_FSDK_GetVersion:" + version.toString() + "," + err.getCode());
 
         ASAE_FSDKError error = mAgeEngine.ASAE_FSDK_InitAgeEngine(FaceDB.appid, FaceDB.age_key);
@@ -59,13 +73,12 @@ public class FRManager {
         error1 = mGenderEngine.ASGE_FSDK_GetVersion(mGenderVersion);
         Log.d(TAG, "ASGE_FSDK_GetVersion:" + mGenderVersion.toString() + "," + error1.getCode());
 
-        mFRTask = new FRTask(mResgist, mWidth, mHeight, resultRecorder,supportMultiFace);
+        mFRTask = new FRTask(mWidth, mHeight, resultRecorder, supportMultiFace);
     }
 
-    public void setFaceMatchListener(FRTask.FaceMatchListener listener) {
-        checkTaskNotNull();
+    public void setFaceMatchListener(FaceMatchListener listener) {
         if (null != listener)
-            mFRTask.setFaceMatchListener(listener);
+            this.faceMatchListener = listener;
     }
 
     public void startFRTask() {
@@ -75,7 +88,7 @@ public class FRManager {
 
     public void destroy() {
         mFRTask.shutdown();
-        AFT_FSDKError err = engine.AFT_FSDK_UninitialFaceEngine();
+        AFT_FSDKError err = fdEngine.AFT_FSDK_UninitialFaceEngine();
         Log.d(TAG, "AFT_FSDK_UninitialFaceEngine =" + err.getCode());
 
         ASAE_FSDKError err1 = mAgeEngine.ASAE_FSDK_UninitAgeEngine();
@@ -83,11 +96,15 @@ public class FRManager {
 
         ASGE_FSDKError err2 = mGenderEngine.ASGE_FSDK_UninitGenderEngine();
         Log.d(TAG, "ASGE_FSDK_UninitGenderEngine =" + err2.getCode());
-        engine = null;
+
+        frEngine.AFR_FSDK_UninitialEngine();
+
+        fdEngine = null;
+        frEngine = null;
     }
 
-    public AFT_FSDKEngine getEngine() {
-        return engine;
+    public AFT_FSDKEngine getFdEngine() {
+        return fdEngine;
     }
 
     public byte[] getmImageNV21() {
@@ -128,7 +145,47 @@ public class FRManager {
         checkTaskNotNull();
         mFRTask.setDelay(delay);
     }
+
     public boolean isSupportMultiFace() {
         return supportMultiFace;
     }
+
+
+    /**
+     * 本地人脸对比
+     *
+     * @param regResult 提取脸部特征数据
+     * @param mResgist  本地人脸数据
+     * @return 对比到的文件
+     */
+    public static String compareWithLocalFaces(AFR_FSDKFace regResult, List<FaceDB.FaceRegist> mResgist) {
+
+        AFR_FSDKMatching score = new AFR_FSDKMatching();
+        float max = 0.0f;
+        String name = null;
+        for (FaceDB.FaceRegist fr : mResgist) {
+            for (AFR_FSDKFace face : fr.mFaceList) {
+                frEngine.AFR_FSDK_FacePairMatching(regResult, face, score);
+                if (max < score.getScore()) {
+                    max = score.getScore();
+                    name = fr.mName;
+                }
+            }
+        }
+        if (score.getScore() > 0.6f)
+            return name;
+        else
+            return "";
+    }
+
+    /**
+     * 匹配到人脸回调接口
+     */
+    public interface FaceMatchListener {
+
+        void onMatch(float score, String name, Bitmap bmp);
+
+        void onMatchDone();
+    }
+
 }
