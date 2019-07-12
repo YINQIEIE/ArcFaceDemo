@@ -172,7 +172,7 @@ public class FRManager {
                 }
             }
         }
-        if (score.getScore() > 0.6f)
+        if (max > 0.6f)
             return name;
         else
             return "";
