@@ -91,7 +91,7 @@ public class MainActivity extends Activity implements OnClickListener {
         // TODO Auto-generated method stub
         switch (paramView.getId()) {
             case R.id.button2:
-                if (((MyApplication) getApplicationContext()).mFaceDB.getmRegister().isEmpty()) {
+                if (FRManager.mFaceDB.getmRegister().isEmpty()) {
                     Toast.makeText(this, "没有注册人脸，请先注册！", Toast.LENGTH_SHORT).show();
                 } else {
                     new AlertDialog.Builder(this)

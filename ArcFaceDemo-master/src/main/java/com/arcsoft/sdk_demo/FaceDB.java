@@ -37,16 +37,6 @@ public class FaceDB {
     private AFR_FSDKVersion mFRVersion;
     boolean mUpgrade;
 
-    public class FaceRegist {
-        public String mName;
-        public List<AFR_FSDKFace> mFaceList;
-
-        public FaceRegist(String name) {
-            mName = name;
-            mFaceList = new ArrayList<>();
-        }
-    }
-
     public FaceDB(String path) {
         mDBPath = path;
         mRegister = new ArrayList<>();
@@ -62,6 +52,24 @@ public class FaceDB {
         }
     }
 
+    public class FaceRegist {
+        private String mName;
+
+        public String getmName() {
+            return mName;
+        }
+
+        public List<AFR_FSDKFace> getmFaceList() {
+            return mFaceList;
+        }
+
+        private List<AFR_FSDKFace> mFaceList;
+
+        private FaceRegist(String name) {
+            mName = name;
+            mFaceList = new ArrayList<>();
+        }
+    }
     public void destroy() {
         if (mFREngine != null) {
             mFREngine.AFR_FSDK_UninitialEngine();

@@ -84,8 +84,7 @@ public class PermissionActiivity extends Activity {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    MyApplication app = (MyApplication) PermissionActiivity.this.getApplicationContext();
-                    app.mFaceDB.loadFaces();
+                    FRManager.mFaceDB.loadFaces();
                     PermissionActiivity.this.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {

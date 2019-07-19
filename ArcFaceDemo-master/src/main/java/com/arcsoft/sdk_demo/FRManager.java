@@ -1,6 +1,7 @@
 package com.arcsoft.sdk_demo;
 
 import android.graphics.Bitmap;
+import android.support.annotation.WorkerThread;
 import android.util.Log;
 
 import com.arcsoft.ageestimation.ASAE_FSDKEngine;
@@ -18,7 +19,13 @@ import com.arcsoft.genderestimation.ASGE_FSDKEngine;
 import com.arcsoft.genderestimation.ASGE_FSDKError;
 import com.arcsoft.genderestimation.ASGE_FSDKVersion;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class FRManager {
 
@@ -32,11 +39,11 @@ public class FRManager {
     private ASGE_FSDKVersion mGenderVersion;
     private ASGE_FSDKEngine mGenderEngine;
     private FRTask mFRTask;
-    private boolean supportMultiFace = false;
+    private boolean supportMultiFace;
 
-    /**
-     * 对比本地人脸数据使用
-     */
+    //对比本地人脸数据使用
+
+    public static FaceDB mFaceDB;//本地人脸管理对象
     private static AFR_FSDKEngine frEngine = new AFR_FSDKEngine();
     private static AFR_FSDKError error = frEngine.AFR_FSDK_InitialEngine(FaceDB.appid, FaceDB.fr_key);
 
@@ -101,6 +108,8 @@ public class FRManager {
 
         fdEngine = null;
         frEngine = null;
+        if (null != mFaceDB)
+            mFaceDB.destroy();
     }
 
     public AFT_FSDKEngine getFdEngine() {
@@ -150,32 +159,99 @@ public class FRManager {
         return supportMultiFace;
     }
 
+    /**
+     * 初始化本地人脸数据管理对象
+     *
+     * @param path 人脸特征路径
+     */
+    public static void initFaceDB(String path) {
+        synchronized (FaceDB.class) {
+            mFaceDB = new FaceDB(path);
+        }
+    }
 
     /**
      * 本地人脸对比
      *
      * @param regResult 提取脸部特征数据
-     * @param mResgist  本地人脸数据
      * @return 对比到的文件
      */
-    public static String compareWithLocalFaces(AFR_FSDKFace regResult, List<FaceDB.FaceRegist> mResgist) {
+    @WorkerThread
+    public static String compareWithLocalFaces(AFR_FSDKFace regResult) {
+        ExecutorService service = null;
+        try {
+            List<FaceDB.FaceRegist> mRegister = mFaceDB.getmRegister();
+            //计算线程数，最大10个
+            int faceNumPerThread = 100;
+            int threadNum = mRegister.size() / faceNumPerThread;
+            if (mRegister.size() % faceNumPerThread > 0)
+                threadNum++;
+            if (threadNum > 10) {
+                threadNum = 10;
+                faceNumPerThread = mRegister.size() / 10;
+            }
+            service = Executors.newFixedThreadPool(threadNum);
+            //初始化线程比对任务
+            List<FaceDB.FaceRegist> partFaceList;
+            FaceRecCallable task;
+            List<FaceRecCallable> taskList = new ArrayList<>(threadNum);
+            for (int i = 0; i < threadNum; i++) {
+                if (i == threadNum - 1)
+                    partFaceList = mRegister.subList(faceNumPerThread * i, mRegister.size());
+                else
+                    partFaceList = mRegister.subList(faceNumPerThread * i, faceNumPerThread * (i + 1));
+                task = new FaceRecCallable(partFaceList, regResult);
+                taskList.add(task);
+            }
+            List<Future<CompareResult>> futureList = service.invokeAll(taskList);
+            CompareResult compareResult = null;
+            for (int i = 0; i < futureList.size(); i++) {
+                if (null == compareResult)
+                    compareResult = futureList.get(i).get();
+                else if (futureList.get(i).get().getScore() > compareResult.getScore())
+                    compareResult = futureList.get(i).get();
+            }
+            service.shutdown();
+            if (null != compareResult && compareResult.getScore() > 0.6f)
+                return compareResult.getName();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        if (null != service)
+            service.shutdown();
+        return null;
+    }
 
-        AFR_FSDKMatching score = new AFR_FSDKMatching();
-        float max = 0.0f;
-        String name = null;
-        for (FaceDB.FaceRegist fr : mResgist) {
-            for (AFR_FSDKFace face : fr.mFaceList) {
-                frEngine.AFR_FSDK_FacePairMatching(regResult, face, score);
-                if (max < score.getScore()) {
-                    max = score.getScore();
-                    name = fr.mName;
+    private static class FaceRecCallable implements Callable<CompareResult> {
+
+        private List<FaceDB.FaceRegist> faceRegists;
+        private AFR_FSDKFace cameraFace;
+
+        private FaceRecCallable(List<FaceDB.FaceRegist> faceRegists, AFR_FSDKFace cameraFace) {
+            this.faceRegists = faceRegists;
+            this.cameraFace = cameraFace;
+        }
+
+        @Override
+        public CompareResult call() throws Exception {
+            AFR_FSDKMatching score = new AFR_FSDKMatching();
+            float max = 0.0f;
+            String name = null;
+            for (FaceDB.FaceRegist fr : faceRegists) {
+                for (AFR_FSDKFace face : fr.getmFaceList()) {
+                    frEngine.AFR_FSDK_FacePairMatching(cameraFace, face, score);
+                    if (max < score.getScore()) {
+                        max = score.getScore();
+                        name = fr.getmName();
+                    }
                 }
             }
+            return new CompareResult(name, max);
         }
-        if (max > 0.6f)
-            return name;
-        else
-            return "";
     }
 
     /**

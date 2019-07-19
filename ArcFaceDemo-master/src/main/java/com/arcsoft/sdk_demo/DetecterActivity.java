@@ -145,7 +145,7 @@ public class DetecterActivity extends Activity implements OnCameraListener, View
         Log.d(TAG, "initFR: " + mWidth + "x" + mHeight);
         Toast.makeText(this, "initFR: " + mWidth + "x" + mHeight, Toast.LENGTH_LONG).show();
         frManager = new FRManager(getIntent().getBooleanExtra("supportMultiFace", false));
-        frManager.init(mWidth, mHeight, resultRecorder, MyApplication.mFaceDB.getmRegister());
+        frManager.init(mWidth, mHeight, resultRecorder);
         frManager.setFaceMatchListener(faceMatchListener);
         frManager.startFRTask();
     }
@@ -174,7 +174,7 @@ public class DetecterActivity extends Activity implements OnCameraListener, View
 
     @Override
     public Object onPreview(byte[] data, int width, int height, int format, long timestamp) {
-        AFT_FSDKError err = frManager.getEngine().AFT_FSDK_FaceFeatureDetect(data, width, height, AFT_FSDKEngine.CP_PAF_NV21, result);
+        AFT_FSDKError err = frManager.getFdEngine().AFT_FSDK_FaceFeatureDetect(data, width, height, AFT_FSDKEngine.CP_PAF_NV21, result);
         Log.d(TAG, "onPreview:AFT_FSDK_FaceFeatureDetect =" + err.getCode());
 //        if (result.isEmpty()) return new Rect[0];
         mImageNV21 = frManager.getmImageNV21();
@@ -224,7 +224,7 @@ public class DetecterActivity extends Activity implements OnCameraListener, View
         }
     }
 
-    private FRTask.FaceMatchListener faceMatchListener = new FRTask.FaceMatchListener() {
+    private FRManager.FaceMatchListener faceMatchListener = new FRManager.FaceMatchListener() {
         @Override
         public void onMatch(float score, String name, Bitmap bmp) {
             DetecterActivity.this.score = score;

@@ -15,13 +15,12 @@ import android.util.Log;
 
 public class MyApplication extends Application {
     private final String TAG = this.getClass().toString();
-    public static FaceDB mFaceDB;
     Uri mImage;
 
     @Override
     public void onCreate() {
         super.onCreate();
-        mFaceDB = new FaceDB(Environment.getExternalStorageDirectory().getPath());
+        FRManager.initFaceDB(Environment.getExternalStorageDirectory().getPath());
         mImage = null;
     }
 
