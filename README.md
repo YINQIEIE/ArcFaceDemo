@@ -5,7 +5,7 @@
 1.可设置是否同时支持多张人脸识别；</br>
 2.设置人脸识别延时，即一次识别后多久再进行下次识别；</br>
 3.将人脸检测封装到fragment里，使用时只需要添加fragment，在回调里处理检测到的人脸数据,具体使用见CameraFragmentTestActivity.java；</br>
-4.本地人脸特征比对见 FRManager#compareWithLocalFaces()
+4.本地人脸特征比对见 FRManager#compareWithLocalFaces()，采用多线程加快比对速度;
 
 
 >工程如何使用？
