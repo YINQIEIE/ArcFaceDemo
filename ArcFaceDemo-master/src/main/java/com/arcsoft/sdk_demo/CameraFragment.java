@@ -14,7 +14,7 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.FrameLayout;
+import android.view.ViewTreeObserver;
 
 import com.arcsoft.facetracking.AFT_FSDKEngine;
 import com.arcsoft.facetracking.AFT_FSDKError;
@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class CameraFragment extends Fragment implements View.OnTouchListener, CameraSurfaceView.OnCameraListener, Camera.AutoFocusCallback {
+public class CameraFragment extends Fragment implements View.OnTouchListener, CameraSurfaceView.OnCameraListener, Camera.AutoFocusCallback, ViewTreeObserver.OnGlobalLayoutListener {
 
     private final String TAG = getClass().getSimpleName();
 
@@ -40,6 +40,7 @@ public class CameraFragment extends Fragment implements View.OnTouchListener, Ca
     private CameraSurfaceView surfaceView;
     private MyCameraGLSurfaceView glSurfaceView;
     private int[] surfaceSize;
+    private View rootView;
 
     private FRManager frManager;
 
@@ -83,7 +84,8 @@ public class CameraFragment extends Fragment implements View.OnTouchListener, Ca
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_camera, container, false);
+        rootView = inflater.inflate(R.layout.fragment_camera, container, false);
+        return rootView;
     }
 
     @Override
@@ -98,8 +100,13 @@ public class CameraFragment extends Fragment implements View.OnTouchListener, Ca
         glSurfaceView.setOnTouchListener(this);
         surfaceView.setOnCameraListener(this);
         surfaceView.setupGLSurafceView(glSurfaceView, true, mCameraMirror, mCameraRotate);
-        surfaceSize = getSurfaceSize(view);
-//        showToast("getSurfaceSize: width = " + surfaceSize[0] + " height = " + surfaceSize[1]);
+        surfaceView.getViewTreeObserver().addOnGlobalLayoutListener(this);
+    }
+
+    @Override
+    public void onGlobalLayout() {
+        surfaceView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+        surfaceSize = getSurfaceSize();
     }
 
     /**
@@ -107,11 +114,9 @@ public class CameraFragment extends Fragment implements View.OnTouchListener, Ca
      *
      * @return 宽高对调后的宽高数组
      */
-    private int[] getSurfaceSize(View view) {
-        FrameLayout rlCamera = view.findViewById(R.id.flCamera);
-        ViewGroup.LayoutParams layoutParams = rlCamera.getLayoutParams();
-        Log.d(TAG, "getSurfaceSize: width = " + layoutParams.width + " height = " + layoutParams.height);
-        return new int[]{layoutParams.height, layoutParams.width};
+    private int[] getSurfaceSize() {
+        View rlCamera = rootView.findViewById(R.id.glSurfaceView);
+        return new int[]{rlCamera.getMeasuredHeight(), rlCamera.getMeasuredWidth()};
     }
 
     @Override
