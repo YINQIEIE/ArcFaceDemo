@@ -1,12 +1,13 @@
 package com.arcsoft.sdk_demo;
 
 import android.content.Context;
+import android.content.res.Configuration;
 import android.util.AttributeSet;
 
 import com.guo.android_extend.widget.CameraGLSurfaceView;
 
 /**
- * 只考虑竖屏
+ * 横竖屏适配
  */
 public class MyCameraGLSurfaceView extends CameraGLSurfaceView {
 
@@ -27,10 +28,14 @@ public class MyCameraGLSurfaceView extends CameraGLSurfaceView {
         int height = MeasureSpec.getSize(heightSpec);
 
         if (mAspectRatio != 0) {
-            height = (int) (previewWidth * ((double) width / (double) previewHeight));
+            int orientation = getContext().getResources().getConfiguration().orientation;
+            if (orientation == Configuration.ORIENTATION_PORTRAIT)
+                height = (int) (previewWidth * ((double) width / (double) previewHeight));
+            else
+                width = (int) (previewWidth * ((double) height / (double) previewHeight));
+//                height = (int) (previewHeight * ((double) width / (double) previewWidth));
         }
         setMeasuredDimension(width, height);
-//        setMeasuredDimension(height, width);
     }
 
     @Override
@@ -43,9 +48,5 @@ public class MyCameraGLSurfaceView extends CameraGLSurfaceView {
             requestLayout();
         }
     }
-
-    @Override
-    public boolean performClick() {
-        return super.performClick();
-    }
 }
+
